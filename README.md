@@ -239,8 +239,9 @@ adb install -r VAG-Performance-Monitor-0.5.0-AA.apk
 <summary>SHA-256 and signing certificate</summary>
 
 ```text
-SHA-256 of both 0.5.0 APKs: see SHA256SUMS.txt in the release assets.
-certificate SHA-256: 8c5ded478ffa3ba33ae0f82e72ef7b1a1cd8ef2f522c84c803d7a22f24b31646
+aaa19bc2be04bc6eb1537f0473af565200b7e0d6f417be369de03351c2172dbb  VAG-Performance-Monitor-0.5.0-standard.apk
+0438e1dfc8e1b5a906d2ee31bacd3c4ab38f1a514999fe2db2b546ab92b2ad47  VAG-Performance-Monitor-0.5.0-AA.apk
+certificate SHA-256: b00777ed843ab301f23876f68b67d60738a9fe84667bcc67cadf33620b5be73d
 ```
 
 The APKs are signed with the Android Debug key (`CN=Android Debug`). Check with
@@ -249,8 +250,10 @@ The APKs are signed with the Android Debug key (`CN=Android Debug`). Check with
 </details>
 
 > [!NOTE]
-> These are debug builds. They work for manual testing, but switching to a release signature will
-> require uninstalling the app first. The two builds cannot be installed at the same time.
+> These are debug builds signed by the CI runner's `CN=Android Debug` key. Its certificate differs
+> from 0.4.1's, so updating from 0.4.1 needs an uninstall first (app settings are lost). The two
+> builds cannot be installed at the same time, and a switch to a release signature will also need an
+> uninstall.
 
 ## Quick start
 
@@ -450,6 +453,7 @@ release would need a host allowlist. More: [SECURITY.md](SECURITY.md).
 | [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md) | Widget hosting and the read-only telemetry bridge |
 | [docs/SPEC.md](docs/SPEC.md) | Full technical specification |
 | [CHANGELOG.md](CHANGELOG.md) | Change history |
+| [docs/releases/0.5.0.md](docs/releases/0.5.0.md) | 0.5.0 release notes |
 | [docs/releases/0.4.1.md](docs/releases/0.4.1.md) | 0.4.1 release notes |
 | [docs/releases/0.4.0.md](docs/releases/0.4.0.md) | 0.4.0 release notes |
 | [docs/releases/0.3.0.md](docs/releases/0.3.0.md) | 0.3.0 release notes |

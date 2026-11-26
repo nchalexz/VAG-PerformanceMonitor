@@ -272,17 +272,18 @@ adb install -r VAG-Performance-Monitor-0.5.0-AA.apk
 <summary>Контрольные суммы SHA-256</summary>
 
 ```text
-SHA-256 обоих APK 0.5.0 — в SHA256SUMS.txt среди ассетов релиза.
-certificate SHA-256: 8c5ded478ffa3ba33ae0f82e72ef7b1a1cd8ef2f522c84c803d7a22f24b31646
+aaa19bc2be04bc6eb1537f0473af565200b7e0d6f417be369de03351c2172dbb  VAG-Performance-Monitor-0.5.0-standard.apk
+0438e1dfc8e1b5a906d2ee31bacd3c4ab38f1a514999fe2db2b546ab92b2ad47  VAG-Performance-Monitor-0.5.0-AA.apk
+certificate SHA-256: b00777ed843ab301f23876f68b67d60738a9fe84667bcc67cadf33620b5be73d
 ```
 
 </details>
 
 > [!NOTE]
-> Это debug-сборки, подписанные ключом `CN=Android Debug`. Для обычного
-> использования они подходят, но при переходе на release-подпись Android
-> потребует удалить приложение перед установкой новой версии. Две сборки
-> нельзя установить одновременно.
+> Это debug-сборки, подписанные ключом CI `CN=Android Debug`. Его сертификат
+> отличается от сертификата 0.4.1, поэтому обновление с 0.4.1 требует сначала
+> удалить приложение (настройки будут потеряны). Две сборки нельзя установить
+> одновременно; переход на release-подпись тоже потребует удаления.
 
 ## Быстрый старт
 
@@ -486,6 +487,7 @@ VAG-набор собран из OBDb/Audi-Q3 (CC BY-SA 4.0); у всех ста
 | [`docs/AARE_DASHGRID.md`](docs/AARE_DASHGRID.md) | виджет и отсутствующий read-only мост телеметрии |
 | [`docs/SPEC.md`](docs/SPEC.md) | полное техническое задание |
 | [`CHANGELOG.md`](CHANGELOG.md) | история изменений |
+| [`docs/releases/0.5.0.md`](docs/releases/0.5.0.md) | релизные заметки 0.5.0 |
 | [`docs/releases/0.4.1.md`](docs/releases/0.4.1.md) | релизные заметки 0.4.1 |
 | [`docs/releases/0.4.0.md`](docs/releases/0.4.0.md) | релизные заметки 0.4.0 |
 | [`docs/releases/0.3.0.md`](docs/releases/0.3.0.md) | релизные заметки 0.3.0 |
