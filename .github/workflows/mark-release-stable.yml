@@ -1,10 +1,11 @@
 name: Mark v0.5.0 as a release
 
+# One-off helper: clears the pre-release flag on an already published
+# release. Triggered by a non-v tag so the APK release workflow is not run.
 on:
   push:
-    branches: [main]
-    paths:
-      - '.github/workflows/mark-release-stable.yml'
+    tags:
+      - 'mark-v0.5.0-stable'
 
 permissions:
   contents: write
@@ -13,14 +14,15 @@ jobs:
   stable:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - name: Publish v0.5.0 as a stable release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -x
+          gh --version
           gh release edit v0.5.0 \
-            --title "VAG Performance Monitor 0.5.0" \
-            --notes-file docs/releases/0.5.0.md \
-            --prerelease=false \
-            --latest
-          gh release view v0.5.0 --json name,isPrerelease,isLatest
+            --repo "$GITHUB_REPOSITORY" \
+            --prerelease=false
+          gh release view v0.5.0 \
+            --repo "$GITHUB_REPOSITORY" \
+            --json tagName,isPrerelease,isLatest
