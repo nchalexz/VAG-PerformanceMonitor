@@ -109,27 +109,33 @@ class CockpitViewModel(application: Application) : AndroidViewModel(application)
     private fun subscribe() {
         if (catalogEnabled) return
         val includeVirtual = Telemetry.state.value.connection == ConnectionKind.DEMO
-        val ids = buildList {
-            addAll(MetricRegistry.gauges.flatMap { it.allSignalIds })
+        val visible = buildList {
+            addAll(MetricRegistry.gauges)
             when (page) {
-                CockpitPage.DASHBOARD -> addAll(MetricRegistry.mainTiles.flatMap { it.allSignalIds })
-                CockpitPage.EXTENDED -> addAll(
-                    MetricRegistry.category(category, includeVirtual)
-                        .flatMap { it.allSignalIds },
-                )
+                CockpitPage.DASHBOARD -> addAll(MetricRegistry.mainTiles)
+                CockpitPage.EXTENDED -> addAll(MetricRegistry.category(category, includeVirtual))
             }
         }
-        Telemetry.subscribe(SUBSCRIPTION, ids)
+        // Основные источники опрашиваются в первую очередь, запасные
+        // (VAG DID вместо молчащего PID) — в фоне. Иначе медленный
+        // многокадровый обмен отбирает шину у стрелок.
+        Telemetry.subscribe(SUBSCRIPTION, visible.map { it.signalId })
+        Telemetry.subscribe(
+            ALT_SUBSCRIPTION,
+            visible.flatMap { spec -> spec.alternatives.map { it.signalId } },
+        )
         Telemetry.setCatalogEnabled(false)
     }
 
     override fun onCleared() {
         Telemetry.subscribe(SUBSCRIPTION, emptyList())
+        Telemetry.subscribe(ALT_SUBSCRIPTION, emptyList())
         Telemetry.setCatalogEnabled(false)
         super.onCleared()
     }
 
     private companion object {
         const val SUBSCRIPTION = "cockpit"
+        const val ALT_SUBSCRIPTION = "cockpit-alt"
     }
 }

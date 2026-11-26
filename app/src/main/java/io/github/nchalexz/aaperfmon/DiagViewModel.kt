@@ -19,11 +19,15 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import io.github.nchalexz.aaperfmon.core.*
+import io.github.nchalexz.aaperfmon.telemetry.AdapterConfig
+import io.github.nchalexz.aaperfmon.telemetry.ConnectionKind
+import io.github.nchalexz.aaperfmon.telemetry.Telemetry
 import kotlin.coroutines.resume
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -104,6 +108,47 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
     private var loopJob: Job? = null
 
     private val clock = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+
+    init {
+        Telemetry.init(application)
+        // Экран диагностики больше не живёт отдельным подключением: если
+        // адаптер открыт из настроек или приборки, он же доступен здесь.
+        viewModelScope.launch {
+            Telemetry.state.collect { shared ->
+                when (shared.connection) {
+                    ConnectionKind.CONNECTED -> if (!_state.value.connected) {
+                        _state.update {
+                            it.copy(
+                                connected = true,
+                                adapterTitle = shared.connectionLabel,
+                                adapterVersion = shared.adapterVersion,
+                                voltage = shared.voltage,
+                                message = "Подключено: ${shared.connectionLabel}",
+                            )
+                        }
+                    }
+                    ConnectionKind.ERROR, ConnectionKind.DISCONNECTED -> if (_state.value.connected) {
+                        _state.update {
+                            it.copy(
+                                connected = false,
+                                adapterTitle = "",
+                                adapterVersion = "",
+                                voltage = "",
+                                warning = "",
+                                liveRunning = false,
+                                monitorRunning = false,
+                                message = "Не подключено",
+                            )
+                        }
+                    }
+                    else -> Unit
+                }
+            }
+        }
+    }
+
+    /** Общий адаптер: свой, открытый здесь, либо уже открытый приложением. */
+    private fun sharedAdapter(): Elm327? = elm ?: AdapterHolder.elm
 
     // Известные адреса блоков VAG для быстрого поиска
     private val knownIds = listOf(
@@ -270,6 +315,9 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
 
         elm = adapter
         AdapterHolder.attach(adapter, transport.title)
+        // Приборка, виджет и автомобильный экран берут это же соединение.
+        // Отсюда и берётся переход из ДЕМО в живые данные.
+        Telemetry.adopt(adapter, transport.title, version, voltage)
         _state.update {
             it.copy(connected = true, adapterTitle = transport.title,
                     adapterVersion = version, voltage = voltage, warning = warning)
@@ -281,6 +329,11 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun disconnectInternal() {
         loopJob?.cancel()
+        // Если адаптер уже отдан телеметрии, закрывает его она: это одно
+        // и то же соединение, второго владельца нет.
+        if (Telemetry.state.value.isLive || Telemetry.state.value.connection == ConnectionKind.CONNECTING) {
+            runCatching { Telemetry.disconnect() }
+        }
         runCatching { elm?.close() }
         elm = null
         AdapterHolder.detach()
@@ -294,15 +347,19 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
     // -- поиск блоков -------------------------------------------------------
 
     fun scan(full: Boolean) = run("Поиск блоков") {
-        val adapter = elm ?: return@run say("Сначала подключитесь")
+        val adapter = sharedAdapter() ?: return@run say("Сначала подключитесь")
         val ids = if (full) (0x700..0x7FF).toList() else knownIds
         say("Проверяется адресов: ${ids.size}")
-        adapter.acceptAll()
+        synchronized(adapter) { adapter.acceptAll() }
 
         val found = mutableListOf<ModuleInfo>()
         ids.forEachIndexed { index, canId ->
-            adapter.setHeader(canId)
-            val lines = adapter.command("3E00", 700)
+            // Заголовок и запрос — одна операция: телеметрия делит этот же
+            // адаптер и не должна вклиниться между ATSH и 3E00.
+            val lines = synchronized(adapter) {
+                adapter.setHeader(canId)
+                adapter.command("3E00", 700)
+            }
             if (!IsoTp.isNegative(lines)) {
                 val (source, data) = IsoTp.assemble(lines)
                 if (data.isNotEmpty()) {
@@ -318,35 +375,37 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Собирает имя, номер запчасти и число ошибок по каждому блоку. */
     fun collectAll() = run("Сбор данных") {
-        val adapter = elm ?: return@run say("Сначала подключитесь")
+        val adapter = sharedAdapter() ?: return@run say("Сначала подключитесь")
         val modules = _state.value.modules.toMutableList()
         if (modules.isEmpty()) return@run say("Сначала выполните поиск блоков")
 
         modules.forEachIndexed { index, item ->
-            adapter.acceptAll()
-            val uds = UdsClient(adapter, item.canId)
-            if (!uds.testerPresent()) {
-                modules[index] = item.copy(name = "нет ответа")
-                _state.update { it.copy(modules = modules.toList()) }
-                return@forEachIndexed
-            }
-            uds.startSession()
-            val name = runCatching { uds.readText(0xF197) }.getOrDefault("")
-            val part = runCatching { uds.readText(0xF187) }.getOrDefault("")
-            val brief = uds.faultBrief(0xFF)
+            val strategy = synchronized(adapter) {
+                adapter.acceptAll()
+                val uds = UdsClient(adapter, item.canId)
+                if (!uds.testerPresent()) {
+                    modules[index] = item.copy(name = "нет ответа")
+                    _state.update { it.copy(modules = modules.toList()) }
+                    return@synchronized null
+                }
+                uds.startSession()
+                val name = runCatching { uds.readText(0xF197) }.getOrDefault("")
+                val part = runCatching { uds.readText(0xF187) }.getOrDefault("")
+                val brief = uds.faultBrief(0xFF)
 
+                modules[index] = item.copy(
+                    rx = uds.rxId?.let { "0x%03X".format(it) } ?: item.rx,
+                    name = name, part = part,
+                    faults = brief?.count,
+                    firstCode = listOf(brief?.code, brief?.failure)
+                        .filterNot { it.isNullOrBlank() }.joinToString(" "),
+                )
+                _state.update { it.copy(modules = modules.toList()) }
+                uds.mfStrategy
+            }
             // Видеть, каким способом удалось дочитать длинный ответ, полезно:
             // по этой строке сразу понятно, насколько адаптеру можно верить.
-            uds.mfStrategy?.let { say("${item.hex}: длинный ответ дочитан — ${mfName(it)}") }
-
-            modules[index] = item.copy(
-                rx = uds.rxId?.let { "0x%03X".format(it) } ?: item.rx,
-                name = name, part = part,
-                faults = brief?.count,
-                firstCode = listOf(brief?.code, brief?.failure)
-                    .filterNot { it.isNullOrBlank() }.joinToString(" "),
-            )
-            _state.update { it.copy(modules = modules.toList()) }
+            strategy?.let { say("${item.hex}: длинный ответ дочитан — ${mfName(it)}") }
             progress((index + 1) * 100 / modules.size)
             Thread.sleep(200)
         }
@@ -355,15 +414,18 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Разбирает ошибки блока по каждому признаку. */
     fun readFaults(canId: Int) = run("Разбор ошибок") {
-        val adapter = elm ?: return@run say("Сначала подключитесь")
-        adapter.acceptAll()
-        val uds = UdsClient(adapter, canId)
-        if (!uds.testerPresent()) return@run say("Блок не отвечает")
-        uds.startSession()
+        val adapter = sharedAdapter() ?: return@run say("Сначала подключитесь")
+        val uds = synchronized(adapter) {
+            adapter.acceptAll()
+            val client = UdsClient(adapter, canId)
+            if (!client.testerPresent()) return@run say("Блок не отвечает")
+            client.startSession()
+            client
+        }
 
         val rows = mutableListOf<FaultRow>()
         Dtc.masks.forEachIndexed { index, (mask, title) ->
-            val brief = uds.faultBrief(mask)
+            val brief = synchronized(adapter) { uds.faultBrief(mask) }
             rows += FaultRow(title, brief?.count, brief?.code ?: "", brief?.failure ?: "")
             progress((index + 1) * 100 / Dtc.masks.size)
             Thread.sleep(1500)   // блок остаётся занят после обрыва длинной передачи
@@ -383,33 +445,35 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun clearFaults(canId: Int) = run("Стирание ошибок") {
-        val adapter = elm ?: return@run say("Сначала подключитесь")
-        adapter.acceptAll()
-        val uds = UdsClient(adapter, canId)
-        if (!uds.testerPresent()) return@run say("Блок не отвечает")
-        val ok = uds.clearFaults()
+        val adapter = sharedAdapter() ?: return@run say("Сначала подключитесь")
+        val ok = synchronized(adapter) {
+            adapter.acceptAll()
+            val uds = UdsClient(adapter, canId)
+            if (!uds.testerPresent()) return@run say("Блок не отвечает")
+            uds.clearFaults()
+        }
         say(if (ok) "Память ошибок стёрта" else "Блок отказал в стирании")
     }
 
     // -- двигатель ----------------------------------------------------------
 
     fun readEngine() = run("Диагностика двигателя") {
-        val adapter = elm ?: return@run say("Сначала подключитесь")
-        adapter.acceptAll()
+        val adapter = sharedAdapter() ?: return@run say("Сначала подключитесь")
+        synchronized(adapter) { adapter.acceptAll() }
 
         say("Чтение VIN"); progress(15)
-        val vin = Obd.readVin(adapter)
+        val vin = synchronized(adapter) { Obd.readVin(adapter) }
 
         say("Чтение кодов"); progress(40)
         fun decorate(codes: List<String>) =
             codes.map { EngineCode(it, Codes.describe(it), Codes.isSerious(it)) }
 
-        val stored = decorate(Obd.readDtcs(adapter, 0x03)); progress(60)
-        val pending = decorate(Obd.readDtcs(adapter, 0x07)); progress(75)
-        val permanent = decorate(Obd.readDtcs(adapter, 0x0A)); progress(85)
+        val stored = decorate(synchronized(adapter) { Obd.readDtcs(adapter, 0x03) }); progress(60)
+        val pending = decorate(synchronized(adapter) { Obd.readDtcs(adapter, 0x07) }); progress(75)
+        val permanent = decorate(synchronized(adapter) { Obd.readDtcs(adapter, 0x0A) }); progress(85)
 
         say("Проверка готовности систем")
-        val readiness = Obd.readReadiness(adapter)
+        val readiness = synchronized(adapter) { Obd.readReadiness(adapter) }
 
         _state.update {
             it.copy(engine = EngineInfo(vin, stored, pending, permanent, readiness, true))
@@ -418,22 +482,24 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun clearEngine() = run("Стирание кодов двигателя") {
-        val adapter = elm ?: return@run say("Сначала подключитесь")
-        adapter.acceptAll()
-        val ok = Obd.clearDtcs(adapter)
+        val adapter = sharedAdapter() ?: return@run say("Сначала подключитесь")
+        val ok = synchronized(adapter) {
+            adapter.acceptAll()
+            Obd.clearDtcs(adapter)
+        }
         say(if (ok) "Коды двигателя стёрты" else "Блок отказал в стирании")
     }
 
     // -- живые параметры ----------------------------------------------------
 
     fun startLive() {
-        val adapter = elm ?: return say("Сначала подключитесь")
+        val adapter = sharedAdapter() ?: return say("Сначала подключитесь")
         if (_state.value.liveRunning) return
         _state.update { it.copy(liveRunning = true) }
         loopJob = viewModelScope.launch(Dispatchers.IO) {
-            adapter.acceptAll()
+            synchronized(adapter) { adapter.acceptAll() }
             say("Определяю поддерживаемые параметры")
-            val supported = Obd.supportedPids(adapter)
+            val supported = synchronized(adapter) { Obd.supportedPids(adapter) }
             val list = Obd.pids.keys.filter { it in supported }
                 .ifEmpty { listOf(0x05, 0x0C, 0x0D, 0x11, 0x42) }
             say("Доступно параметров: ${list.size}")
@@ -448,7 +514,7 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
             while (isActive && _state.value.liveRunning) {
                 val values = mutableListOf<LiveValue>()
                 for (pid in alive.toList()) {
-                    val answer = Obd.readPid(adapter, pid)
+                    val answer = synchronized(adapter) { Obd.readPid(adapter, pid) }
                     if (answer == null) {
                         val n = (misses[pid] ?: 0) + 1
                         misses[pid] = n
@@ -488,25 +554,28 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
      * по одному и смотрите, на каком счётчик перестаёт уменьшаться.
      */
     fun startMonitor(canId: Int) {
-        val adapter = elm ?: return say("Сначала подключитесь")
+        val adapter = sharedAdapter() ?: return say("Сначала подключитесь")
         if (_state.value.monitorRunning) return
         _state.update { it.copy(monitorRunning = true, monitor = emptyList()) }
 
         loopJob = viewModelScope.launch(Dispatchers.IO) {
-            adapter.acceptAll()
-            val uds = UdsClient(adapter, canId)
-            if (!uds.testerPresent()) {
-                say("Блок не отвечает")
-                _state.update { it.copy(monitorRunning = false) }
-                return@launch
+            val uds = synchronized(adapter) {
+                adapter.acceptAll()
+                val client = UdsClient(adapter, canId)
+                if (!client.testerPresent()) {
+                    say("Блок не отвечает")
+                    _state.update { it.copy(monitorRunning = false) }
+                    return@launch
+                }
+                client
             }
             say("Монитор запущен")
             var previous: Int? = null
 
             while (isActive && _state.value.monitorRunning) {
-                val active = uds.faultBrief(0x01)
+                val active = synchronized(adapter) { uds.faultBrief(0x01) }
                 Thread.sleep(1200)
-                val total = uds.faultBrief(0xFF)
+                val total = synchronized(adapter) { uds.faultBrief(0xFF) }
 
                 val event = if (previous != null && active != null && active.count != previous)
                     "изменилось на %+d".format(active.count - previous!!) else ""
@@ -531,14 +600,17 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Шаг мастера: подписывает текущее показание счётчика. */
     fun wizardSample(canId: Int, label: String) = run("Замер") {
-        val adapter = elm ?: return@run say("Сначала подключитесь")
-        adapter.acceptAll()
-        val uds = UdsClient(adapter, canId)
-        if (!uds.testerPresent()) return@run say("Блок не отвечает")
+        val adapter = sharedAdapter() ?: return@run say("Сначала подключитесь")
+        val uds = synchronized(adapter) {
+            adapter.acceptAll()
+            val client = UdsClient(adapter, canId)
+            if (!client.testerPresent()) return@run say("Блок не отвечает")
+            client
+        }
 
-        val active = uds.faultBrief(0x01)
+        val active = synchronized(adapter) { uds.faultBrief(0x01) }
         Thread.sleep(1000)
-        val total = uds.faultBrief(0xFF)
+        val total = synchronized(adapter) { uds.faultBrief(0xFF) }
 
         val previous = _state.value.wizard.lastOrNull()?.active
         val delta = if (previous != null && active != null)
@@ -617,12 +689,12 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
         if (snapshot.reportTrace) {
             appendLine("ПОЛНЫЙ ОБМЕН С АДАПТЕРОМ")
             appendLine("-".repeat(60))
-            elm?.rawLog?.forEach { (request, answer) ->
+            sharedAdapter()?.rawLog?.forEach { (request, answer) ->
                 appendLine(">> $request")
                 appendLine("<< $answer")
             }
         } else {
-            val lines = elm?.rawLog?.size ?: 0
+            val lines = sharedAdapter()?.rawLog?.size ?: 0
             appendLine("Полный обмен с адаптером не вложен ($lines команд).")
             appendLine("Включите переключатель на вкладке «Связь», если отчёт")
             appendLine("нужен для разбора неисправности.")

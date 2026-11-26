@@ -277,10 +277,14 @@ object MetricRegistry {
     val speed = metric(
         SignalCatalog.Ids.SPEED, DisplayCategory.ENGINE,
         "SPEED", "СКОРОСТЬ", "km/h", "км/ч", 0,
+        min = 0.0, max = 240.0,
     )
     val rpm = metric(
         SignalCatalog.Ids.RPM, DisplayCategory.ENGINE,
         "REVS", "ОБОРОТЫ", "rpm", "об/мин", 0,
+        // Шкала тахометра, а не «доля»: без неё стрелка стояла бы на максимуме
+        // уже на холостых. Красная зона — около отсечки, не универсальный порог.
+        min = 0.0, max = 8000.0, warn = 6500.0, critical = 7200.0,
     )
     val gear = metric(
         SignalCatalog.Ids.GEAR, DisplayCategory.GEARBOX,
@@ -294,6 +298,9 @@ object MetricRegistry {
     val fuelLevel = metric(
         SignalCatalog.Ids.FUEL_LEVEL, DisplayCategory.FUEL,
         "FUEL", "ТОПЛИВО", "%", "%", 0,
+        // На части MQB стандартный PID 0x2F молчит, а щиток отдаёт уровень
+        // по DID 2206. Показываем первый ответивший источник.
+        alternatives = listOf(MetricSource("vag.714.2206.fuel_level")),
     )
 
     private val load = metric(
@@ -562,11 +569,15 @@ object MetricRegistry {
     private val vagByCategory: Map<DisplayCategory, List<MetricSpec>> =
         vagSpecs.groupBy { it.category }
 
-    /** Три прибора главного экрана — ровно как в макете. */
-    val gauges: List<MetricSpec> = listOf(coolant, boost, oil)
+    /**
+     * Три прибора главного экрана: то, что меняется каждую секунду и читается
+     * по стрелке. Обороты, скорость и наддув; температуры вынесены в плитки,
+     * потому что за поездку они почти не двигаются, а место на шкале занимают.
+     */
+    val gauges: List<MetricSpec> = listOf(rpm, speed, boost)
 
-    /** Пять плиток главного экрана — ровно как в макете. */
-    val mainTiles: List<MetricSpec> = listOf(speed, rpm, gear, fuelUse, fuelLevel)
+    /** Пять плиток: медленные и дискретные величины, которые нужны цифрой. */
+    val mainTiles: List<MetricSpec> = listOf(coolant, oil, gear, fuelUse, fuelLevel)
 
     private val engine = listOf(
         speed, rpm, load, throttle, pedal,

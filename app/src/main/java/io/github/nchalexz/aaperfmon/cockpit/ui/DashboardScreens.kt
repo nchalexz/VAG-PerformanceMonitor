@@ -39,14 +39,13 @@ fun DashboardScreen(
 ) {
     BoxWithConstraints(modifier.fillMaxSize()) {
         val portrait = maxHeight > maxWidth
+        val portraitGaugeHeight = maxWidth * 0.42f
         val columns = when {
-            maxWidth >= 700.dp -> 5
-            maxWidth >= 500.dp -> 3
+            maxWidth >= 900.dp -> 5
+            maxWidth >= 560.dp -> 3
             else -> 2
         }
-        val portraitPanelHeight = maxWidth * 0.44f
-        val tileRowHeight = ((maxWidth - 6.dp * (columns - 1)) / columns) * 0.48f
-        Column(Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp, top = 4.dp, bottom = 6.dp)) {
+        Column(Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp, top = 4.dp, bottom = 16.dp)) {
             GaugePanel(
                 gauges = MetricRegistry.gauges,
                 values = values,
@@ -55,9 +54,12 @@ fun DashboardScreen(
                 language = language,
                 onGaugeClick = onGaugeClick,
                 modifier = if (portrait) {
-                    Modifier.fillMaxWidth().height(portraitPanelHeight)
+                    // На телефоне три шкалы в ряд ограничены шириной: высота
+                    // панели считается от неё, иначе приборы становятся
+                    // вытянутыми и подписи уходят за край.
+                    Modifier.fillMaxWidth().height(portraitGaugeHeight)
                 } else {
-                    Modifier.fillMaxWidth().weight(1f)
+                    Modifier.fillMaxWidth().weight(1.75f)
                 },
             )
             Spacer(Modifier.height(8.dp))
@@ -68,14 +70,8 @@ fun DashboardScreen(
                 now = now,
                 canShowData = canShowData,
                 language = language,
-                rowHeight = if (portrait) {
-                    portraitPanelHeight * 0.82f
-                } else {
-                    tileRowHeight
-                },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().weight(1f),
             )
-            if (portrait) Spacer(Modifier.weight(1f))
         }
     }
 }
@@ -100,8 +96,8 @@ fun ExtendedDashboardScreen(
 ) {
     BoxWithConstraints(modifier.fillMaxSize()) {
         val portrait = maxHeight > maxWidth
-        val portraitPanelHeight = maxWidth * 0.44f
-        Column(Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp, top = 4.dp, bottom = 6.dp)) {
+        val portraitGaugeHeight = maxWidth * 0.42f
+        Column(Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp, top = 4.dp, bottom = 16.dp)) {
             GaugePanel(
                 gauges = MetricRegistry.gauges,
                 values = values,
@@ -110,9 +106,9 @@ fun ExtendedDashboardScreen(
                 language = language,
                 onGaugeClick = onGaugeClick,
                 modifier = if (portrait) {
-                    Modifier.fillMaxWidth().height(portraitPanelHeight)
+                    Modifier.fillMaxWidth().height(portraitGaugeHeight)
                 } else {
-                    Modifier.fillMaxWidth().weight(0.50f)
+                    Modifier.fillMaxWidth().weight(1.1f)
                 },
             )
             Spacer(Modifier.height(4.dp))
@@ -129,11 +125,7 @@ fun ExtendedDashboardScreen(
                 now = now,
                 canShowData = canShowData,
                 language = language,
-                modifier = if (portrait) {
-                    Modifier.fillMaxWidth().weight(1f)
-                } else {
-                    Modifier.fillMaxWidth().weight(0.50f)
-                },
+                modifier = Modifier.fillMaxWidth().weight(1f),
             )
         }
     }
@@ -184,15 +176,13 @@ private fun TileRows(
     now: Long,
     canShowData: Boolean,
     language: UiLanguage,
-    rowHeight: androidx.compose.ui.unit.Dp? = null,
     modifier: Modifier = Modifier,
 ) {
     val rows = specs.chunked(columns)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         rows.forEach { row ->
             Row(
-                (if (rowHeight != null) Modifier.height(rowHeight) else Modifier.weight(1f))
-                    .fillMaxWidth(),
+                Modifier.weight(1f).fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 row.forEach { spec ->

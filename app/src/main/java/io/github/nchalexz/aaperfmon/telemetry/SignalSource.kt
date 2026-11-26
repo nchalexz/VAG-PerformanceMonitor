@@ -254,8 +254,16 @@ class Elm327SignalSource(
 
     override val label: String = "ELM327"
 
+    /**
+     * Фильтры приёма настраиваются один раз на соединение.
+     *
+     * Заголовок проверяется перед каждым запросом, а не один раз: то же
+     * соединение использует диагностический экран, и после чтения блока
+     * в адаптере остаётся его адрес. Если не вернуть 7DF, стандартные PID
+     * уйдут не в двигатель, а в последний открытый блок.
+     */
     @Volatile
-    private var headerPrepared = false
+    private var filtersPrepared = false
 
     /** По клиенту на блок: у каждого свой адрес запроса и своя история «занят». */
     private val udsClients = mutableMapOf<Int, UdsClient>()
@@ -276,23 +284,32 @@ class Elm327SignalSource(
         if (definition.isUds) readUds(definition) else readObd(definition)
     }
 
+    /** Закрывает общий адаптер: второе соединение к тому же ELM327 невозможно. */
+    override fun close() {
+        runCatching { elm.close() }
+    }
+
     private fun readObd(definition: SignalDefinition): Reading {
         val pid = definition.pid ?: return Reading(null, ReadingState.UNSUPPORTED)
         // Диагностика могла оставить заголовок последнего найденного блока.
         // Для OBD-II нужен функциональный адрес 7DF, иначе запрос уйдёт
         // в борт компьютер, а не в двигатель.
-        if (!headerPrepared) {
-            elm.acceptAll()
-            if (udsFilterActive) {
-                elm.clearRxFilter()
-                udsFilterActive = false
-            }
-            elm.setHeader(0x7DF)
-            headerPrepared = true
-        }
         val command = "01%02X".format(pid)
         val lines = try {
-            elm.command(command, timeoutMs)
+            // Заголовок и запрос — одна операция. Диагностика делит этот же
+            // адаптер и не должна вклиниться между ATSH и PID.
+            synchronized(elm) {
+                if (!filtersPrepared) {
+                    elm.acceptAll()
+                    filtersPrepared = true
+                }
+                if (udsFilterActive) {
+                    elm.clearRxFilter()
+                    udsFilterActive = false
+                }
+                if (elm.header != 0x7DF) elm.setHeader(0x7DF)
+                elm.command(command, timeoutMs)
+            }
         } catch (_: Exception) {
             return Reading(null, ReadingState.ERROR)
         }
@@ -331,10 +348,12 @@ class Elm327SignalSource(
 
         val client = udsClients.getOrPut(txId) { UdsClient(elm, txId) }
         definition.rxId?.let { client.expectResponse(it) }
-        // Следующий OBD-запрос обязан снова выставить 7DF.
-        headerPrepared = false
         val data = try {
-            client.request("22%04X".format(did), timeoutMs = 900, attempts = 1)
+            synchronized(elm) {
+                // Следующий OBD-запрос обязан снова выставить 7DF.
+                filtersPrepared = false
+                client.request("22%04X".format(did), timeoutMs = 900, attempts = 1)
+            }
         } catch (error: UdsError) {
             // Нет ответа, «вне диапазона», «нужен доступ» — для приборки это
             // одинаково «параметр не отдаётся», а не сломанный адаптер.

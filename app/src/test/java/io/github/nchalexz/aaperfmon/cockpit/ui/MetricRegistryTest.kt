@@ -17,6 +17,25 @@ class MetricRegistryTest {
     }
 
     @Test
+    fun `gauges show fast values and tiles show slow ones`() {
+        assertEquals(
+            listOf("engine.rpm", "vehicle.speed", "engine.boost_kpa"),
+            MetricRegistry.gauges.map { it.signalId },
+        )
+        assertEquals(
+            listOf("engine.coolant_c", "engine.oil_c", "vehicle.gear", "fuel.l100_km", "fuel.level_pct"),
+            MetricRegistry.mainTiles.map { it.signalId },
+        )
+    }
+
+    @Test
+    fun `tachometer scale is in rpms, not in fractions`() {
+        assertEquals(0.0, MetricRegistry.rpm.scaleMin, 0.0)
+        assertEquals(8000.0, MetricRegistry.rpm.scaleMax, 0.0)
+        assertEquals(4000.0, MetricRegistry.rpm.display(4000.0), 0.0)
+    }
+
+    @Test
     fun `boost is shown in bar with a european comma`() {
         assertEquals("0,62", MetricRegistry.boost.format(62.0))
         assertEquals("1,90", MetricRegistry.boost.format(190.0))

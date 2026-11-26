@@ -19,6 +19,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.nchalexz.aaperfmon.*
+import io.github.nchalexz.aaperfmon.telemetry.AdapterConfig
+import io.github.nchalexz.aaperfmon.telemetry.AdapterStore
 
 // Оформление вынесено сюда, чтобы менять цвета в одном месте
 val BgColor = Color(0xFF0F1216)
@@ -94,11 +96,35 @@ fun Row2(left: String, right: String, rightColor: Color = TextColor) {
 
 @Composable
 fun ConnectScreen(state: AppState, model: DiagViewModel) {
-    var host by remember { mutableStateOf("192.168.0.10") }
-    var port by remember { mutableStateOf("35000") }
+    // Последний сохранённый адаптер — а не зашитый адрес: после успешного
+    // подключения форма должна показывать то, к чему приложение подключено.
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val saved = remember { AdapterStore.load(context) }
+    var host by remember {
+        mutableStateOf((saved as? AdapterConfig.Wifi)?.host ?: "192.168.0.10")
+    }
+    var port by remember {
+        mutableStateOf(((saved as? AdapterConfig.Wifi)?.port ?: 35000).toString())
+    }
     // "wifi" | "bt" | "usb" — способ связи с адаптером
-    var mode by remember { mutableStateOf("wifi") }
-    var chosen by remember { mutableStateOf("") }
+    var mode by remember {
+        mutableStateOf(
+            when (saved) {
+                is AdapterConfig.Bluetooth -> "bt"
+                is AdapterConfig.Usb -> "usb"
+                else -> "wifi"
+            },
+        )
+    }
+    var chosen by remember {
+        mutableStateOf(
+            when (saved) {
+                is AdapterConfig.Bluetooth -> saved.address
+                is AdapterConfig.Usb -> saved.deviceName
+                else -> ""
+            },
+        )
+    }
 
     Column(Modifier.verticalScroll(rememberScrollState()).padding(12.dp)) {
 

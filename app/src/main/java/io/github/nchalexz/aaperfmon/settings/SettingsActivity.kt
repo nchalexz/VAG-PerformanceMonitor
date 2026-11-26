@@ -1,8 +1,11 @@
 package io.github.nchalexz.aaperfmon.settings
 
+import android.Manifest
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -72,9 +75,29 @@ import io.github.nchalexz.aaperfmon.ui.TextColor
 import io.github.nchalexz.aaperfmon.ui.WarnColor
 
 class SettingsActivity : ComponentActivity() {
+
+    /**
+     * Настройки можно открыть прямо из приборки, минуя главный экран,
+     * поэтому разрешения на Bluetooth запрашиваются и здесь. Иначе первое
+     * же подключение к адаптеру падало бы с SecurityException.
+     */
+    private val permissions = buildList {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            add(Manifest.permission.BLUETOOTH_CONNECT)
+            add(Manifest.permission.BLUETOOTH_SCAN)
+        } else {
+            add(Manifest.permission.BLUETOOTH)
+            add(Manifest.permission.BLUETOOTH_ADMIN)
+        }
+    }.toTypedArray()
+
+    private val askPermissions =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
+
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        askPermissions.launch(permissions)
         setContent { SettingsScreen(onClose = { finish() }) }
     }
 }

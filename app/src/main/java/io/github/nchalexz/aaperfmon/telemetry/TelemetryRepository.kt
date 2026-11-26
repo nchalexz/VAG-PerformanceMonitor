@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.hardware.usb.UsbManager
 import androidx.core.content.ContextCompat
+import io.github.nchalexz.aaperfmon.core.AdapterHolder
 import io.github.nchalexz.aaperfmon.core.BluetoothTransport
 import io.github.nchalexz.aaperfmon.core.Elm327
 import io.github.nchalexz.aaperfmon.core.UsbSerialTransport
@@ -26,6 +27,8 @@ data class TelemetryState(
     val connection: ConnectionKind = ConnectionKind.DEMO,
     val connectionLabel: String = "ДЕМО",
     val message: String = "",
+    val adapterVersion: String = "",
+    val voltage: String = "",
     val values: Map<String, SignalValue> = emptyMap(),
     val profile: VehicleProfile = VehicleProfiles.mqb,
     val lastUpdateMs: Long = 0L,
@@ -117,13 +120,17 @@ object Telemetry {
                 connection = ConnectionKind.CONNECTING,
                 connectionLabel = "Подключение",
                 message = config.label,
+                adapterVersion = "",
+                voltage = "",
             )
         }
         connectJob = scope.launch {
+            var opening: Elm327? = null
             try {
                 stopEngineLocked()
                 val transport = openTransport(config)
                 val elm = Elm327(transport)
+                opening = elm
                 elm.connect()
                 elm.init()
                 val (version, voltage) = elm.identify()
@@ -132,22 +139,61 @@ object Telemetry {
                     ConnectionKind.CONNECTED,
                     config.label,
                     "$version · $voltage",
+                    version = version,
+                    voltage = voltage,
                 )
+                AdapterHolder.attach(elm, config.label)
                 AdapterStore.save(app, config)
                 startService()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
+                // Недооткрытый канал надо закрыть, иначе повторная попытка
+                // упрётся в занятый последовательный порт.
+                runCatching { opening?.close() }
+                // Следующий вход в приложение должен попробовать снова:
+                // иначе одна неудачная попытка навсегда оставляет ДЕМО.
+                autoConnectOffered = false
                 _state.update {
                     it.copy(
                         connection = ConnectionKind.ERROR,
                         connectionLabel = "Ошибка",
                         message = error.message ?: "не удалось подключиться",
+                        adapterVersion = "",
+                        voltage = "",
                     )
                 }
             }
         }
     }
+
+    /**
+     * Принимает уже открытый адаптер от диагностического экрана.
+     *
+     * В приложении один ELM327 и один последовательный канал. Диагностика
+     * исторически открывала своё соединение; теперь она отдаёт его сюда,
+     * и приборка, виджет и автомобильный экран сразу получают живые данные
+     * вместо ДЕМО. Второго соединения не появляется.
+     */
+    @Synchronized
+    fun adopt(adapter: Elm327, label: String, version: String, voltage: String) {
+        if (!initialized) return
+        autoConnectOffered = true
+        connectJob?.cancel()
+        installLocked(
+            Elm327SignalSource(adapter),
+            ConnectionKind.CONNECTED,
+            label,
+            listOf(version, voltage).filter { it.isNotBlank() }.joinToString(" · "),
+            version = version,
+            voltage = voltage,
+        )
+        AdapterHolder.attach(adapter, label)
+        startService()
+    }
+
+    /** Готов ли общий адаптер к диагностике. */
+    fun hasAdapter(): Boolean = initialized && AdapterHolder.elm != null
 
     @Synchronized
     fun useDemo() {
@@ -156,7 +202,14 @@ object Telemetry {
         connectJob?.cancel()
         AdapterStore.setAutoConnect(app, false)
         installLocked(DemoSignalSource(), ConnectionKind.DEMO, "ДЕМО", "")
-        _state.update { it.copy(message = "Демонстрационные данные, не автомобиль") }
+        AdapterHolder.detach()
+        _state.update {
+            it.copy(
+                message = "Демонстрационные данные, не автомобиль",
+                adapterVersion = "",
+                voltage = "",
+            )
+        }
     }
 
     @Synchronized
@@ -171,11 +224,14 @@ object Telemetry {
         engine?.close()
         engine = null
         source = null
+        AdapterHolder.detach()
         _state.update {
             it.copy(
                 connection = ConnectionKind.DISCONNECTED,
                 connectionLabel = "Нет связи",
                 message = "Адаптер отключён",
+                adapterVersion = "",
+                voltage = "",
             )
         }
         stopService()
@@ -190,6 +246,7 @@ object Telemetry {
         val filtered = ids.filter { SignalCatalog.get(it) != null }.toSet()
         synchronized(watches) { watches[key] = filtered }
         engine?.setDashboard(allWatched())
+        engine?.setBackground(profileWatched())
     }
 
     fun setCatalogEnabled(enabled: Boolean) {
@@ -209,6 +266,7 @@ object Telemetry {
         _state.update { it.copy(profile = profile) }
         watches["profile"] = profile.signalIds
         engine?.setDashboard(allWatched())
+        engine?.setBackground(profileWatched())
     }
 
     fun startService() {
@@ -267,6 +325,7 @@ object Telemetry {
         engine?.close()
         engine = null
         source = null
+        AdapterHolder.detach()
         _state.update { it.copy(values = emptyMap()) }
     }
 
@@ -276,6 +335,8 @@ object Telemetry {
         kind: ConnectionKind,
         label: String,
         message: String,
+        version: String = "",
+        voltage: String = "",
     ) {
         valuesJob?.cancel()
         valuesJob = null
@@ -285,6 +346,7 @@ object Telemetry {
         val newEngine = TelemetryEngine(newSource, scope)
         engine = newEngine
         newEngine.setDashboard(allWatched())
+        newEngine.setBackground(profileWatched())
         newEngine.setCatalogEnabled(catalogEnabled)
         valuesJob = scope.launch {
             newEngine.values.collect { values ->
@@ -302,12 +364,25 @@ object Telemetry {
                 connection = kind,
                 connectionLabel = label,
                 message = message,
+                adapterVersion = version,
+                voltage = voltage,
                 values = if (kind == ConnectionKind.DEMO) it.values else emptyMap(),
             )
         }
     }
 
     private fun allWatched(): List<String> = synchronized(watches) {
-        watches.values.flatten().distinct()
+        val cockpit = watches["cockpit"].orEmpty()
+        // Когда приборка открыта, профиль уходит в фон и не отбирает шину.
+        // Когда её нет, профиль — единственный источник данных для виджета.
+        val profile = watches["profile"].orEmpty()
+        if (cockpit.isEmpty()) (cockpit + profile).distinct() else cockpit.toList()
+    }
+
+    /** Фон: профиль (виджет) и запасные источники приборки. */
+    private fun profileWatched(): List<String> = synchronized(watches) {
+        val cockpit = watches["cockpit"].orEmpty()
+        val profile = if (cockpit.isEmpty()) emptyList() else watches["profile"].orEmpty()
+        (profile + watches["cockpit-alt"].orEmpty()).distinct()
     }
 }

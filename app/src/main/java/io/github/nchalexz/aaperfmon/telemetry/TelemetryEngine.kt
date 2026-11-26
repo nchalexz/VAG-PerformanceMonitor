@@ -46,6 +46,10 @@ class TelemetryEngine(
     @Volatile
     private var dashboardIds: List<String> = emptyList()
 
+    /** Фон: сигналы профиля для виджета. Опрашиваются, только когда экран молчит. */
+    @Volatile
+    private var backgroundIds: List<String> = emptyList()
+
     @Volatile
     private var catalogIds: List<String> = emptyList()
 
@@ -54,6 +58,7 @@ class TelemetryEngine(
 
     private var job: Job? = null
     private var catalogCursor = 0
+    private var lastBackgroundPoll = 0L
 
     // Эти карты трогает только корутина опроса, поэтому блокировки не нужны.
     private val lastRead = mutableMapOf<String, Long>()
@@ -73,6 +78,20 @@ class TelemetryEngine(
         }
         ids.forEach(::visit)
         dashboardIds = expanded.filter { index[it]?.isComputed == false }
+    }
+
+    /**
+     * Фоновые сигналы (профиль для виджета). Они не должны отбирать шину
+     * у приборки: пока хоть один сигнал экрана просрочен, фон ждёт.
+     */
+    fun setBackground(ids: Collection<String>) {
+        val expanded = LinkedHashSet<String>()
+        fun visit(id: String) {
+            if (!expanded.add(id)) return
+            index[id]?.computed?.inputs?.forEach(::visit)
+        }
+        ids.forEach(::visit)
+        backgroundIds = expanded.filter { index[it]?.isComputed == false }
     }
 
     fun setCatalog(ids: Collection<String>) {
@@ -108,7 +127,23 @@ class TelemetryEngine(
                     .filter { isDue(it, now) }
                     .minByOrNull { lastRead[it.id] ?: 0L }
 
-                val next = due ?: nextCatalogSignal(now)
+                val background = backgroundIds.asSequence()
+                    .mapNotNull { index[it] }
+                    .filter { isDue(it, now) }
+                    .minByOrNull { lastRead[it.id] ?: 0L }
+
+                // Фон получает один слот раз в три секунды, даже если у
+                // приборки всегда есть просроченный сигнал. Иначе профиль
+                // и запасные источники не опрашивались бы никогда.
+                val backgroundTurn = background != null &&
+                    (due == null || now - lastBackgroundPoll >= 3_000L)
+                if (backgroundTurn) lastBackgroundPoll = now
+
+                val next = if (backgroundTurn) {
+                    background
+                } else {
+                    due ?: nextCatalogSignal(now)
+                }
                 if (next == null) {
                     delay(25)
                     continue

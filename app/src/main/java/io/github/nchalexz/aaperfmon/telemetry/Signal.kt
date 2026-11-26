@@ -254,6 +254,10 @@ data class SignalValue(
     fun isStale(now: Long, definition: SignalDefinition): Boolean {
         if (state != ReadingState.OK) return true
         val age = now - timestampMs
-        return age > maxOf(3_000L, definition.intervalMs * 4)
+        // Дешёвый ELM327 отвечает на один запрос за 150–300 мс, поэтому
+        // круг из десятка сигналов занимает несколько секунд. Порог в 3 с
+        // заставлял приборку мигать «—» между опросами; 6 с — это всё ещё
+        // «свежее» для медленного адаптера, но уже не выдаёт старьё за живое.
+        return age > maxOf(6_000L, definition.intervalMs * 6)
     }
 }

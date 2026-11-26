@@ -48,8 +48,16 @@ class MainActivity : ComponentActivity() {
         }
     }.toTypedArray()
 
+    /**
+     * Автоподключение запускается только после ответа на запрос разрешений.
+     * На Android 12+ обращение к Bluetooth без BLUETOOTH_CONNECT падает,
+     * и раньше единственная попытка сгорала до того, как пользователь
+     * успевал разрешить доступ.
+     */
     private val askPermissions =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            Telemetry.autoConnectOnce()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // С targetSdk 35 и выше Android 15 всё равно рисует приложение
@@ -58,7 +66,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         Telemetry.init(applicationContext)
-        Telemetry.autoConnectOnce()
         askPermissions.launch(permissions)
 
         setContent {
@@ -66,6 +73,13 @@ class MainActivity : ComponentActivity() {
                 AppScreen(onShare = ::shareReport)
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Возврат из настроек после подключения не должен оставлять
+        // главный экран с надписью «не подключено».
+        runCatching { Telemetry.autoConnectOnce() }
     }
 
     /** Отправляет отчёт любым приложением: почтой, мессенджером, в файл. */

@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Version 0.5.0" src="https://img.shields.io/badge/version-0.5.0-E5484D?style=flat-square"></a>
+  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Version 0.5.1" src="https://img.shields.io/badge/version-0.5.1-E5484D?style=flat-square"></a>
   <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/license-MIT-38BDF8?style=flat-square"></a>
   <a href="#install"><img alt="Android 7.0+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white"></a>
   <a href="build.gradle.kts"><img alt="Kotlin 2.2" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?style=flat-square&logo=kotlin&logoColor=white"></a>
@@ -32,21 +32,21 @@
 </p>
 
 > [!WARNING]
-> **0.5.0 is a pre-release test build, not a verified release.**
-> It runs on an Android 15 emulator against a software ELM327 stub, but it has **not been tested in a
-> car**, on a real phone, on an Android Auto head unit or on live Bluetooth/USB adapters. No signal
-> has been confirmed on a vehicle. See [What is tested](#what-is-tested-what-is-not).
+> **0.5.1 is a test build, not a verified release.**
+> It runs on an Android 15 emulator and was checked against a live **ELM327 v1.5** (Bluetooth on the
+> host, bridged to the emulator). The phone's own Bluetooth stack, an Android Auto head unit and a
+> driving session are still untested. See [What is tested](#what-is-tested-what-is-not).
 
 > [!NOTE]
-> 0.5.0 contains the dashboard, the VAG UDS catalog and a read-only telemetry provider for
-> DashGrid. It is still not verified in a car, on a head unit or with live adapters; the DashGrid
-> cockpit was checked on an emulator with VPM's demo values.
+> 0.5.1 fixes the dead end where connecting on the diagnostics screen left the dashboard in Demo:
+> the adapter is now shared with telemetry. The dashboard signals were redistributed. A live
+> ELM327 v1.5 answered OBD PIDs and one VAG DID; a real phone and head unit are still untested.
 
 > [!NOTE]
-> **По-русски.** 0.5.0 — тестовая сборка для телеметрии VAG: 129 сигналов, приборка, виджет и
-> отдельная AA-сборка. Проверено на эмуляторе Android 15 с программной заглушкой ELM327; на
-> реальном автомобиле, телефоне и головном устройстве — нет. Сборки `standard` и `aa` используют
-> один `applicationId`, поэтому ставьте только одну. Полный перевод и подробности —
+> **По-русски.** 0.5.1 — тестовая сборка: приборка, виджет и отдельная AA-сборка. Проверена на
+> эмуляторе Android 15 и на живом ELM327 v1.5 (Bluetooth на хосте, мост в эмулятор); на реальном
+> телефоне, головном устройстве и в поездке — нет. Сборки `standard` и `aa` используют один
+> `applicationId`, поэтому ставьте только одну. Полный перевод —
 > [README.ru.md](README.ru.md).
 
 ## What this is
@@ -83,7 +83,7 @@ Three principles shaped the app:
 
 | Part | What it does |
 |---|---|
-| **Dashboard** | Coolant, boost and oil temperature in three analog-digital gauges; speed, RPM, gear, instant consumption and fuel level in five tiles. Opens from the gauges icon on the diagnostics screen. |
+| **Dashboard** | RPM, speed and boost in three analog-digital gauges; coolant, oil temperature, gear, instant consumption and fuel level in five tiles. Opens from the gauges icon on the diagnostics screen. |
 | **Extended dashboard** | The same three gauges smaller, a category bar (Engine, Temperatures, Fuel, Gearbox, Turbo, Diagnostics) and an adaptive grid — five columns on a wide screen. Tapping a gauge opens its category. |
 | **Data catalog** | All 129 signals with search, category filter, value, request (PID/DID), ECU, protocol and verification status. |
 | **Day theme** | The same composition with separate light tokens, not an inverted image. See [screen-day.png](docs/assets/screen-day.png). |
@@ -120,10 +120,10 @@ More: [docs/AA.md](docs/AA.md) and [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md
 ## One telemetry — three surfaces
 
 <p align="center">
-  <img src="docs/assets/surfaces.svg" alt="0.5.0 mockup of three surfaces: dashboard, widget and Android Auto" width="100%">
+  <img src="docs/assets/surfaces.svg" alt="0.5.1 mockup of three surfaces: dashboard, widget and Android Auto" width="100%">
 </p>
 
-<p align="center"><sub>A 0.5.0 mockup, not screenshots: the dashboard, widget and car screen read one state.</sub></p>
+<p align="center"><sub>A 0.5.1 mockup, not screenshots: the dashboard, widget and car screen read one state.</sub></p>
 
 | Surface | What it shows | Connection |
 |---|---|---|
@@ -229,19 +229,19 @@ Through `adb`:
 
 ```sh
 # standard build
-adb install -r VAG-Performance-Monitor-0.5.0-standard.apk
+adb install -r VAG-Performance-Monitor-0.5.1-standard.apk
 
 # Android Auto build
-adb install -r VAG-Performance-Monitor-0.5.0-AA.apk
+adb install -r VAG-Performance-Monitor-0.5.1-AA.apk
 ```
 
 <details>
 <summary>SHA-256 and signing certificate</summary>
 
 ```text
-aaa19bc2be04bc6eb1537f0473af565200b7e0d6f417be369de03351c2172dbb  VAG-Performance-Monitor-0.5.0-standard.apk
-0438e1dfc8e1b5a906d2ee31bacd3c4ab38f1a514999fe2db2b546ab92b2ad47  VAG-Performance-Monitor-0.5.0-AA.apk
-certificate SHA-256: b00777ed843ab301f23876f68b67d60738a9fe84667bcc67cadf33620b5be73d
+bb1c83bfc2ab5bcbd71d2c4e976d54eff566e4e240c34082f5a46769731449cf  VAG-Performance-Monitor-0.5.1-standard.apk
+1338f1fc5b788d6ad7c7cfc4eaceb9eccaf552c438fa021b21c813399cd906f5  VAG-Performance-Monitor-0.5.1-AA.apk
+certificate SHA-256: 3ab8b3b4e203b869657c393b98d8108d5b43d1dc7da92e15aeb226f835b717d8
 ```
 
 The APKs are signed with the Android Debug key (`CN=Android Debug`). Check with
@@ -250,9 +250,9 @@ The APKs are signed with the Android Debug key (`CN=Android Debug`). Check with
 </details>
 
 > [!NOTE]
-> These are debug builds signed by the CI runner's `CN=Android Debug` key. Its certificate differs
-> from 0.4.1's, so updating from 0.4.1 needs an uninstall first (app settings are lost). The two
-> builds cannot be installed at the same time, and a switch to a release signature will also need an
+> These are debug builds signed with `CN=Android Debug`. The certificate differs from 0.5.0's, so
+> updating from 0.5.0 or 0.4.1 needs an uninstall first (app settings are lost). The two builds
+> cannot be installed at the same time, and a switch to a release signature will also need an
 > uninstall.
 
 ## Quick start
@@ -293,7 +293,7 @@ bug.
 |---|---|---|
 | `standard` debug build | `./gradlew :app:assembleStandardDebug` | **yes** |
 | `aa` debug build | `./gradlew :app:assembleAaDebug` | **yes** |
-| 61 JVM tests | `./gradlew :app:testStandardDebugUnitTest` | **yes** |
+| 66 JVM tests | `./gradlew :app:testStandardDebugUnitTest` | **yes** |
 | Android 15 emulator: Dashboard, Extended, catalog, settings, themes/language, LIVE via ELM327 stub | emulator | **yes** |
 | VAG UDS decode and OBD/UDS header switching | fake ELM327 transport, JVM test | **yes** |
 | Widget placed and configured | Android 15 emulator launcher | **yes** |
@@ -302,13 +302,15 @@ bug.
 | DashGrid 1.3.0 native cockpit | Android 15 emulator, contract v1 `call("snapshot")` | **yes** |
 | Android Auto head unit / DHU | Car App Library host | **no** |
 | AARE / DashGrid | actual host and display | **no** |
-| Real car | VAG MQB vehicle | **no** |
-| Bluetooth and USB on live adapters | hardware | **no** |
+| Live ELM327 v1.5 over Bluetooth (host bridge to emulator): init, OBD PIDs, two ECUs | real adapter | **yes** |
+| Live ELM327 v1.5: one VAG UDS DID (oil temperature) | real adapter | **yes** |
+| Real car, engine running, dashboard on a phone | VAG MQB vehicle | **no** |
+| Bluetooth and USB on live adapters, on-device transports | hardware | **no** |
 
 Unit tests, emulator runs and renders are **not** compatibility proof. The catalog has 128 signals
-marked “decoded” and one “described”; none is confirmed on a vehicle. The 83 VAG DIDs have never
-answered on a real MQB TDI yet. The exact open points
-are in [TEST_PLAN.md](TEST_PLAN.md) and [COMPATIBILITY.md](COMPATIBILITY.md).
+marked “decoded” and one “described”; on a live ELM327 one standard-PID set and a single VAG DID
+(oil temperature) answered, the rest are still unconfirmed. The exact open points are in
+[TEST_PLAN.md](TEST_PLAN.md) and [COMPATIBILITY.md](COMPATIBILITY.md).
 
 ## Build
 
@@ -405,7 +407,7 @@ is confirmed on a car. See [SIGNAL_CATALOG.md](SIGNAL_CATALOG.md) and
 - No hardware verification: no real phone, car, head unit or live Bluetooth/USB adapter.
 - Android Auto is a template list only. Google Play publication needs a host allowlist and category
   review; sideloading and AARE use `ALLOW_ALL_HOSTS_VALIDATOR`.
-- AARE/DashGrid: the read-only bridge (contract v1) is in 0.5.0 and was verified with DashGrid
+- AARE/DashGrid: the read-only bridge (contract v1) is in 0.5.1 and was verified with DashGrid
   1.3.0 on an emulator. The standard Android AppWidget has still not been placed on DashGrid, and
   no DashGrid head-unit run was possible.
 - Profiles are manual; there is no VIN-based selection.
@@ -454,7 +456,7 @@ release would need a host allowlist. More: [SECURITY.md](SECURITY.md).
 | [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md) | Widget hosting and the read-only telemetry bridge |
 | [docs/SPEC.md](docs/SPEC.md) | Full technical specification |
 | [CHANGELOG.md](CHANGELOG.md) | Change history |
-| [docs/releases/0.5.0.md](docs/releases/0.5.0.md) | 0.5.0 release notes |
+| [docs/releases/0.5.1.md](docs/releases/0.5.1.md) | 0.5.1 release notes |
 | [docs/releases/0.4.1.md](docs/releases/0.4.1.md) | 0.4.1 release notes |
 | [docs/releases/0.4.0.md](docs/releases/0.4.0.md) | 0.4.0 release notes |
 | [docs/releases/0.3.0.md](docs/releases/0.3.0.md) | 0.3.0 release notes |
