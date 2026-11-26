@@ -1,323 +1,311 @@
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="AA Performance Monitor — телеметрия VAG через обычный ELM327" width="100%">
+  <img src="docs/assets/banner.svg" alt="AA Performance Monitor — VAG telemetry through an ordinary ELM327" width="100%">
 </p>
 
 <p align="center">
-  <a href="https://github.com/nchalexz/AAPerformanceMonitor/releases"><img alt="Версия 0.3.0" src="https://img.shields.io/badge/version-0.3.0-E5484D?style=flat-square"></a>
-  <a href="LICENSE"><img alt="Лицензия MIT" src="https://img.shields.io/badge/license-MIT-38BDF8?style=flat-square"></a>
-  <a href="COMPATIBILITY.md"><img alt="Android 7.0+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white"></a>
+  <b>English</b> · <a href="README.ru.md">Русский</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/nchalexz/AAPerformanceMonitor/releases"><img alt="Version 0.3.0" src="https://img.shields.io/badge/version-0.3.0-E5484D?style=flat-square"></a>
+  <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/license-MIT-38BDF8?style=flat-square"></a>
+  <a href="#install"><img alt="Android 7.0+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white"></a>
   <a href="build.gradle.kts"><img alt="Kotlin 2.2" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?style=flat-square&logo=kotlin&logoColor=white"></a>
-  <a href="build.gradle.kts"><img alt="Jetpack Compose" src="https://img.shields.io/badge/Compose-Material%203-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white"></a>
-  <a href="SECURITY.md"><img alt="Google Mobile Services не требуются" src="https://img.shields.io/badge/GMS-not%20required-F5B33C?style=flat-square"></a>
+  <a href="build.gradle.kts"><img alt="Jetpack Compose Material 3" src="https://img.shields.io/badge/Compose-Material%203-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white"></a>
+  <a href="#security-and-privacy"><img alt="Google Mobile Services not required" src="https://img.shields.io/badge/GMS-not%20required-F5B33C?style=flat-square"></a>
 </p>
 
 <p align="center">
-  <strong>Расширенная телеметрия Volkswagen, Audi, Škoda, Seat и Cupra через обычный ELM327.</strong><br>
-  Приборка, виджет и автомобильный экран на одном соединении. Без GMS, регистрации и облака.
+  <strong>Extended telemetry for Volkswagen, Audi, Škoda, Seat and Cupra through an ordinary ELM327.</strong><br>
+  Dashboard, home-screen widget and car screen on one connection. No GMS, no account, no cloud.
 </p>
 
 <p align="center">
-  <a href="#интерфейс">Интерфейс</a> ·
+  <a href="#interface">Interface</a> ·
   <a href="#android-auto">Android Auto</a> ·
-  <a href="#установка">Установка</a> ·
-  <a href="#что-уже-работает">Возможности</a> ·
-  <a href="#что-проверено-а-что-нет">Статус</a> ·
-  <a href="#сборка">Сборка</a> ·
-  <a href="#архитектура">Архитектура</a> ·
-  <a href="#документация">Документация</a>
+  <a href="#install">Install</a> ·
+  <a href="#what-already-works">Features</a> ·
+  <a href="#what-is-tested-what-is-not">Status</a> ·
+  <a href="#build">Build</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#documentation">Documentation</a>
 </p>
 
 > [!WARNING]
-> **0.3.0 — тестовая сборка, а не готовый продукт.**
-> Она проверена на эмуляторе Android 15 с программной заглушкой ELM327, но
-> ещё **не проверялась на автомобиле**, на реальном смартфоне, на головном
-> устройстве Android Auto и на живых адаптерах Bluetooth или USB. Ни один
-> сигнал не имеет статуса «подтверждён на автомобиле». Подробности —
-> в разделе [«Что проверено, а что нет»](#что-проверено-а-что-нет).
+> **0.3.0 is a test build, not a verified release.**
+> It runs on an Android 15 emulator against a software ELM327 stub, but it has **not been tested in a
+> car**, on a real phone, on an Android Auto head unit or on live Bluetooth/USB adapters. No signal
+> has been confirmed on a vehicle. See [What is tested](#what-is-tested-what-is-not).
 
-## Что это
+> [!NOTE]
+> **По-русски.** 0.3.0 — тестовая сборка: 45 сигналов, приборка, виджет и отдельная AA-сборка.
+> Проверено на эмуляторе Android 15 с программной заглушкой ELM327; на реальном автомобиле,
+> телефоне и головном устройстве — нет. Полный перевод: [README.ru.md](README.ru.md).
 
-AA Performance Monitor — самостоятельное Android-приложение для непрерывной
-телеметрии автомобилей VAG. Оно выросло из диагностического ядра
-[VAG Diag](https://github.com/gdm0991/vagdiag), но решает другую задачу:
-не разовый поиск неисправностей, а приборы, которые постоянно находятся
-перед глазами.
+## What this is
 
-Одна служба телеметрии отдаёт данные приборной панели, виджету на рабочем
-столе и автомобильному экрану. Эти три потребителя делят одно соединение
-с ELM327. Диагностический экран по-прежнему открывает собственное —
-не запускайте сканирование блоков одновременно с телеметрией.
+AA Performance Monitor is a standalone Android app for continuous VAG telemetry. It grew out of the
+[VAG Diag](https://github.com/gdm0991/vagdiag) diagnostics core, but solves a different problem:
+not a one-off fault scan, but gauges that stay in view while you drive.
 
-Приложение ставится рядом с VAG Diag: у него свой `applicationId`, имя
-и иконка. Google Mobile Services не нужны, регистрации нет, данные
-автомобиля никуда не отправляются.
+One telemetry service feeds the dashboard, the home-screen widget and the car screen. Those three
+consumers share one ELM327 connection; the diagnostics screen still opens its own, so do not run a
+block scan and telemetry at the same time.
 
-Три принципа, по которым принимались решения:
+The app has its own `applicationId`, name and icon, and installs next to VAG Diag. Google Mobile
+Services are not required, there is no sign-up, and vehicle data never leaves the device.
 
-- **Честные данные.** Если сигнал не поддерживается, устарел или ещё не
-  прочитан, показывается «—», а не ноль.
-- **Одно соединение для телеметрии.** Приборка, виджет и автомобильный
-  экран читают один поток состояния и один адаптер; диагностика — отдельный
-  потребитель.
-- **Только чтение.** Новый интерфейс телеметрии ничего не пишет в блоки.
-  Унаследованное ручное стирание ошибок — единственное исключение, и оно
-  выполняется только по нажатию пользователя.
+Three principles shaped the app:
 
-## Интерфейс
+- **Honest data.** If a signal is unsupported, stale or not read yet, the UI shows “—” instead of
+  zero.
+- **One telemetry connection.** Dashboard, widget and car screen read one state stream and one
+  adapter; diagnostics is a separate consumer.
+- **Read-only UI.** The telemetry interface never writes to a control module. The inherited manual
+  DTC clear is the only write path, and it requires an explicit tap.
+
+## Interface
 
 <p align="center">
-  <img src="docs/assets/screen-driving.png" width="31%" alt="Экран «Движение»: три колодца и пять плиток">
-  <img src="docs/assets/screen-performance.png" width="31%" alt="Экран «Динамика»: наддув, мощность, момент и температуры">
-  <img src="docs/assets/screen-data.png" width="31%" alt="Экран «Данные»: каталог параметров с поиском и статусами">
+  <img src="docs/assets/screen-driving.png" width="31%" alt="Driving screen: three dials and five tiles">
+  <img src="docs/assets/screen-performance.png" width="31%" alt="Performance screen: boost, power, torque and temperatures">
+  <img src="docs/assets/screen-data.png" width="31%" alt="Data screen: signal catalog with search and verification status">
 </p>
 
-<p align="center"><sub>Реальные снимки с эмулятора Android 15 (API 35): LIVE через программную заглушку ELM327. Это не автомобиль и не подтверждение совместимости.</sub></p>
+<p align="center"><sub>Screenshots from the Android 15 emulator, running LIVE against a software ELM327 stub. They are not a car and not proof of compatibility.</sub></p>
 
-| Экран | Что показывает |
+| Part | What it does |
 |---|---|
-| **Движение** | Температура ОЖ, наддув и температура масла в трёх колодцах; скорость, обороты, передача, расход и остаток топлива — в плитках. |
-| **Динамика** | Наддув, расчётные мощность и момент, обороты, нагрузка, давление в топливной рампе и температуры. |
-| **Данные** | Весь каталог: поиск, фильтр по категориям, текущее значение, PID/DID, блок, протокол и статус проверки. |
+| **Driving** | Coolant, boost and oil temperature in three dials; speed, RPM, gear, fuel rate and fuel level in tiles. |
+| **Performance** | Boost, calculated power and torque, RPM, load, fuel-rail pressure and temperatures. |
+| **Data** | The full catalog with search, category filter, current value, PID/DID, ECU, protocol and verification status. |
 
-Режим переключается в настройках: **«Подключиться»** для ELM327 или
-**«Демо»**. Если соединение активно, в шапке приборки появляется быстрый
-возврат в ДЕМО. Шестерёнка открывает настройки автомобиля и адаптера.
+The mode is switched in **Settings**: **Connect** for ELM327 or **Demo**. When a connection is
+active, the dashboard header offers a quick return to demo; the gear icon opens vehicle and adapter
+settings.
 
 ## Android Auto
 
 <p align="center">
-  <img src="docs/assets/android-auto.png" width="100%" alt="Макет экрана Android Auto: список состояния и параметров">
+  <img src="docs/assets/android-auto.png" width="100%" alt="Render of the AA Performance ListTemplate screen with status and signal rows">
 </p>
 
-<p align="center"><sub>Макет по фактическому шаблону <code>ListTemplate</code>, а не снимок с головного устройства. Реального снимка пока нет: в эмуляторе стоит stub Android Auto, DHU и головное устройство не проверялись.</sub></p>
+<p align="center"><sub>Render of the actual <code>ListTemplate</code>, not a head-unit screenshot. A real screenshot is not available: the emulator ships stub Android Auto, and neither DHU nor a head unit was tested.</sub></p>
 
-Android Auto — это отдельная сборка **`aa`**, а не режим обычной. Она
-ставится вместо `standard` (у них один `applicationId`) и добавляет
-`CarAppService` из Car App Library 1.7.0.
+Android Auto is a separate **`aa`** build, not a mode of the standard one. It replaces `standard`
+(both share one `applicationId`) and adds a `CarAppService` from Car App Library 1.7.0.
 
-- Экран — шаблонный список: состояние подключения и до восьми параметров
-  выбранного профиля. Значения обновляются из того же `Telemetry`.
-- Штатный хост не разрешает произвольный Canvas, поэтому это список,
-  а не копия приборки. Полноэкранная приборка остаётся в обычной сборке.
-- `HostValidator.ALLOW_ALL_HOSTS_VALIDATOR` нужен для сайдлоада и AARE.
-  Для публикации в Google Play потребуется белый список хостов и проверка
-  категории.
-- На головном устройстве и в Desktop Head Unit сборка пока не проверялась.
-  Если хост не покажет приложение в своём списке, это ограничение хоста,
-  а не отсутствие `CarAppService` в APK.
+- The screen is a template list: connection state plus up to eight parameters from the selected
+  profile. Values update from the same `Telemetry` state.
+- The stock host does not allow arbitrary Canvas content, so this is a list, not a copy of the
+  dashboard. The full dashboard remains in the regular build.
+- `HostValidator.ALLOW_ALL_HOSTS_VALIDATOR` is used for sideloading and AARE. Publishing on Google
+  Play would require a host allowlist and category review.
+- The build has not been tested on a head unit or in the Desktop Head Unit. If a host does not list
+  the app, that is a host limitation, not a missing `CarAppService`.
+- To test locally, install `*-AA.apk`, connect the phone to a DHU or head unit and open
+  “AA Performance” from the host app list.
 
-Проверить локально: установить `*-AA.apk`, подключить телефон к DHU или
-головному устройству, открыть «AA Performance» в списке приложений.
-Подробнее — [`docs/AA.md`](docs/AA.md) и
-[`docs/AARE_DASHGRID.md`](docs/AARE_DASHGRID.md).
+More: [docs/AA.md](docs/AA.md) and [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md).
 
-## Одна телеметрия — три поверхности
+## One telemetry — three surfaces
 
 <p align="center">
-  <img src="docs/assets/surfaces.svg" alt="Схема трёх поверхностей: приборка, виджет, Android Auto" width="100%">
+  <img src="docs/assets/surfaces.svg" alt="Diagram of three surfaces: dashboard, widget and Android Auto" width="100%">
 </p>
 
-<p align="center"><sub>Схема, а не скриншоты: приборка, виджет и шаблон автомобильного экрана читают одно состояние.</sub></p>
+<p align="center"><sub>A diagram, not screenshots: the dashboard, widget and car screen read one state.</sub></p>
 
-- **Приборка** — полный экран с тремя колодцами и плитками. Основной режим
-  для телефона, планшета и AARE/DashGrid.
-- **Виджет** — до четырёх параметров или компактный вариант на два.
-  Настраивается отдельно для каждого экземпляра, поддерживает светлую
-  и тёмную тему и обновляется из службы телеметрии.
-- **Android Auto** — отдельная сборка `aa` с шаблонным списком: состояние
-  и до восьми параметров выбранного профиля. Штатный хост не даёт
-  произвольный Canvas, поэтому это список, а не копия приборки.
-
-Подробнее: [`docs/WIDGET.md`](docs/WIDGET.md),
-[`docs/AA.md`](docs/AA.md), [`docs/AARE_DASHGRID.md`](docs/AARE_DASHGRID.md).
-
-## Что уже работает
-
-**Телеметрия**
-
-- Каталог из **45 сигналов**: 41 стандартный OBD-II PID, 3 вычисляемых
-  показателя и 1 виртуальный.
-- Движок с подписками, приоритетом активного экрана, адаптивной частотой,
-  экспоненциальным backoff и контролем возраста данных.
-- Вычисляемые момент, мощность и наддув; при устаревании зависимостей они
-  тоже становятся «нет данных».
-- Единый процесс-репозиторий: приборка, виджет и автомобильный экран
-  подписываются на один `StateFlow`, второй сессии телеметрии нет.
-- Кэш последних значений, сохранение адаптера и автоподключение при запуске.
-
-**Приборная панель**
-
-- Три экрана: «Движение», «Динамика» и каталог «Данные».
-- Тёмное оформление в стиле штатных цифровых приборов VAG: тонкие шкалы,
-  крупные значения, приглушённые подписи, красные зоны предупреждений.
-- Неподдерживаемый или устаревший сигнал показывается как «—», а не ноль.
-- Данные ДЕМО всегда помечены бейджем **ДЕМО**.
-
-**Настройки и профили**
-
-- Выбор адаптера: Wi-Fi, Bluetooth SPP или USB-serial; подключение, ДЕМО
-  и отключение из одного экрана.
-- Автоподключение к сохранённому адаптеру при старте приложения.
-- Ручные профили автомобиля: VAG MQB и универсальный OBD-II.
-  Набор отображаемых параметров выбирается вручную.
-- Поле VIN есть, но автоматического определения по VIN пока нет.
-
-**Виджет и Android Auto**
-
-- Виджет «Телеметрия AA»: до четырёх параметров или компактный на два,
-  отдельная настройка каждого экземпляра, светлая и тёмная тема, переход
-  в приборку по нажатию.
-- Сборка `aa` с Android Auto через Car App Library 1.7.0: состояние
-  подключения и до восьми параметров профиля в шаблонном списке.
-- Обычная сборка `standard` не содержит автомобильных зависимостей
-  и не объявляет `CarAppService`.
-- Foreground-служба с уведомлением держит процесс и обновляет виджет, пока
-  телеметрия нужна в фоне.
-
-**Диагностика и AARE**
-
-- Транспорты ELM327: Wi-Fi, Bluetooth SPP и USB-serial (CH340, FTDI,
-  CP210x, PL2303).
-- Унаследованный экран VAG Diag: подключение, поиск блоков, чтение и ручное
-  стирание ошибок, OBD-II двигателя, live data и отчёт.
-- Полноэкранную приборку можно запустить на AARE/DashGrid как обычное
-  Android-приложение. Отдельной интеграции с хостом и поддержки AppWidgetHost
-  в DashGrid пока нет.
-
-**Проверяемость**
-
-- 25 JVM-тестов: декодирование, целостность каталога, разбор ответов,
-  расписание опроса, backoff, устаревание и согласованность ДЕМО-модели.
-- Демонстрационный режим позволяет открыть все экраны без адаптера
-  и автомобиля.
-- Приборка, «Данные», настройки и LIVE-режим через заглушку ELM327
-  проверены на эмуляторе Android 15. Виджет размещён на лаунчере Android 15 и конфигуратор
-  сохраняет параметры; обновление значений при живом соединении
-  не проверялось. На реальном устройстве и автомобиле — нет.
-
-## Установка
-
-Две сборки используют один `applicationId` и **заменяют друг друга** при
-установке. Выберите один вариант:
-
-| Сборка | Что внутри | Размер |
+| Surface | What it shows | Connection |
 |---|---|---|
-| `standard` | приборка, виджет, диагностика; без Android Auto | ≈18,9 МБ |
-| `aa` | то же плюс Android Auto (Car App Library) | ≈20,2 МБ |
+| **Phone dashboard** | Full-screen gauges and tiles with demo/live switching. | Shared `Telemetry` state |
+| **Home-screen widget** | Up to four parameters or a compact two-parameter layout. | Shared `Telemetry` state |
+| **Android Auto / AARE** | A template list in the `aa` build; on AARE the full dashboard runs as a normal Activity. | Shared `Telemetry` state |
 
-Требования: Android 7.0+ (API 24), ELM327 Wi-Fi / Bluetooth SPP /
-USB-serial, разрешения на сеть, Bluetooth, USB-хост и уведомления.
-Google Mobile Services не нужны.
+All three read one `StateFlow` from the process-wide `Telemetry` object, and the widget is refreshed by
+`TelemetryService`. A second OBD session is not opened. The diagnostics screen is the exception: it
+owns its own `Elm327`, so the two should not scan at the same time.
 
-1. Скачайте нужный APK со страницы
-   [Releases](https://github.com/nchalexz/AAPerformanceMonitor/releases).
-2. Разрешите установку из неизвестных источников и откройте файл.
-3. Приложение установится отдельно от VAG Diag.
+## What already works
 
-Через `adb`:
+**Telemetry**
+
+- 45 signals: 41 standard OBD-II PIDs, 3 calculated values and 1 virtual signal.
+- A subscription engine with dashboard priority, adaptive polling, exponential backoff and data-age
+  tracking.
+- Calculated torque, power and boost; they turn into “no data” when their inputs are missing or
+  stale.
+- One process-wide repository: dashboard, widget and car screen read the same `StateFlow`.
+- Last-value cache, saved adapter and auto-connect on app start.
+
+**Dashboard**
+
+- Three screens: Driving, Performance and the Data catalog.
+- Dark VAG cluster styling: thin scales, large values, muted labels and red warning zones.
+- Unsupported or stale signals show “—” instead of zero.
+- Demo data is always marked with a **DEMO** badge.
+
+**Settings and profiles**
+
+- Adapter choice: Wi-Fi, Bluetooth SPP or USB serial, with connect, demo and disconnect in one place.
+- Auto-connect to the saved adapter at launch.
+- Editable profiles: VAG MQB and a generic OBD-II profile, with a manual signal selection.
+- A VIN field exists, but there is no automatic VIN lookup yet.
+
+**Widget and Android Auto**
+
+- “Telemetry AA” widget: up to four parameters or a compact two-parameter layout, per-instance
+  configuration, light/dark theme and tap-to-open.
+- `aa` build with Android Auto through Car App Library 1.7.0: connection state and up to eight
+  profile parameters in a template list.
+- The `standard` build has no car dependencies and does not declare `CarAppService`.
+- A foreground service with a notification keeps the process alive and refreshes the widget while
+  telemetry is needed.
+
+**Diagnostics and AARE**
+
+- ELM327 transports: Wi-Fi, Bluetooth SPP and USB serial (CH340, FTDI, CP210x, PL2303).
+- The inherited VAG Diag screen: connect, scan modules, read and manually clear DTCs, OBD-II engine
+  data, live data and a report.
+- The full dashboard can run on AARE/DashGrid as a normal Android app. There is no host integration
+  and no DashGrid AppWidgetHost support yet.
+
+**Verification**
+
+- 25 JVM tests: decoding, catalog integrity, payload parsing, polling schedule, backoff, staleness and
+  demo-model consistency.
+- Demo mode opens every screen without an adapter or a car.
+- Dashboard, Data, settings and LIVE via the ELM327 stub were checked on an Android 15 emulator. The
+  widget was placed on the launcher and its configurator saves parameters; live widget updates were
+  not verified. A real phone and car were not tested.
+
+## Install
+
+The two builds share one `applicationId` and **replace each other** when installed. Pick one:
+
+| Build | What is inside | Size |
+|---|---|---|
+| `standard` | Dashboard, widget, diagnostics; no Android Auto. | ≈18.9 MB |
+| `aa` | The same plus Android Auto (Car App Library). | ≈20.2 MB |
+
+Requirements: Android 7.0+ (API 24), an ELM327 over Wi-Fi, Bluetooth SPP or USB serial, and network,
+Bluetooth, USB-host and notification permissions. Google Mobile Services are not required.
+
+1. Download the APK you need from [Releases](https://github.com/nchalexz/AAPerformanceMonitor/releases).
+2. Allow installs from unknown sources when Android asks, then open the file.
+3. The app installs separately from VAG Diag.
+
+Through `adb`:
 
 ```sh
-# обычная сборка
+# standard build
 adb install -r AA-Performance-Monitor-0.3.0-standard.apk
 
-# сборка с Android Auto
+# Android Auto build
 adb install -r AA-Performance-Monitor-0.3.0-AA.apk
 ```
 
 <details>
-<summary>Контрольные суммы SHA-256</summary>
+<summary>SHA-256 and signing certificate</summary>
 
 ```text
 ac125e4117362547899e87795737269d5234234b6905b613bd214ba41d6a6b6c  AA-Performance-Monitor-0.3.0-standard.apk
 237b2c68e44e0425d957259d13c64f3defb929f539d43d0abb4c070a16581f8a  AA-Performance-Monitor-0.3.0-AA.apk
+certificate SHA-256: 36df845b5efe80088341e5ddaf9e69817194871c1318f2638661526c5baff917
 ```
+
+The APKs are signed with the Android Debug key (`CN=Android Debug`). Check with
+`apksigner verify --print-certs <file>.apk`.
 
 </details>
 
 > [!NOTE]
-> Это debug-сборки, подписанные debug-ключом. Для обычного использования они
-> подходят, но при переходе на release-подпись Android потребует удалить
-> приложение перед установкой новой версии.
+> These are debug builds. They work for manual testing, but switching to a release signature will
+> require uninstalling the app first. The two builds cannot be installed at the same time.
 
-## Быстрый старт
+## Quick start
 
-### Демо
+### Demo on the phone
 
-1. Запустите приложение — откроется диагностический экран.
-2. Нажмите иконку приборов в верхней панели.
-3. Переключайтесь между «Движение», «Динамика» и «Данные»: значения меняются
-   согласованно, без адаптера и автомобиля.
-4. Откройте шестерёнку: там выбирается профиль автомобиля, набор параметров
-   и адаптер.
-5. Добавьте виджет «Телеметрия AA» на рабочий стол и выберите до четырёх
-   параметров.
+1. Open the app; the diagnostics screen appears.
+2. Tap the gauges icon in the top bar.
+3. Switch between Driving, Performance and Data: values change coherently with no adapter and no car.
+4. Open the gear icon to choose a profile, signal set and adapter.
+5. Add the “Telemetry AA” widget from the launcher and pick up to four parameters.
 
-### С реальным адаптером
+### With an ELM327
 
-1. Подключите ELM327 по Wi-Fi, Bluetooth или USB.
-2. Откройте **«Автомобиль и адаптер»** → выберите тип адаптера и адрес →
-   **«Подключиться»**. Диагностический экран тоже умеет подключаться.
-3. Вернитесь в приборку: бейдж сменится на **LIVE**, в шапке появится
-   канал и напряжение.
-4. Сверьте обороты, скорость и температуру ОЖ с приборкой автомобиля.
+1. Connect the adapter over Wi-Fi, Bluetooth or USB.
+2. Open **Vehicle and adapter**, choose the adapter type and address, then tap **Connect**. The
+   diagnostics screen can also connect.
+3. Return to the dashboard: the badge changes to **LIVE** and the header shows the channel and
+   voltage.
+4. Compare RPM, speed and coolant temperature with the car’s own cluster.
 
-Если сигнал не поддерживается блоком, останется «—». Это ожидаемое
-поведение, а не ошибка отображения.
+If a module does not support a signal, it stays “—”. That is expected behaviour, not a rendering
+bug.
+
+### Widget
+
+1. Long-press an empty spot on the launcher and choose **Widgets**.
+2. Find **AA Performance Monitor → Telemetry AA**.
+3. Pick a title and up to four parameters, then save.
 
 > [!CAUTION]
-> Приборку можно держать включённой в движении, но не настраивайте её на ходу.
-> Поиск, смена экранов и чтение ошибок — только на стоящем автомобиле.
+> Keep the dashboard on while driving, but do not configure it on the move. Searching, switching
+> screens and reading DTCs belong to a parked car.
 
-## Что проверено, а что нет
+## What is tested, what is not
 
-| Проверка | Как | Результат |
+| Check | How | Result |
 |---|---|---|
-| Сборка `standard` debug | `./gradlew :app:assembleStandardDebug` | **да** |
-| Сборка `aa` debug | `./gradlew :app:assembleAaDebug` | **да** |
-| JVM-тесты | `./gradlew :app:testStandardDebugUnitTest`, 25 тестов | **да** |
-| Эмулятор Android 15 (API 35) | приборка, «Данные», настройки, LIVE через заглушку ELM327 | **да** |
-| Виджет в меню виджетов | эмулятор Android 15 | **да** |
-| Виджет на лаунчере | размещён и настроен; обновление значений при живом соединении | **частично** |
-| Раскладка на реальном смартфоне | устройство без GMS | **нет** |
-| Android Auto на головном устройстве / DHU | Car App Library, реальный хост | **нет** |
-| AARE / DashGrid | конкретный хост и разрешение | **нет** |
-| Реальный автомобиль | платформа VAG MQB | **нет** |
-| Bluetooth и USB на живых адаптерах | проверка с адаптерами | **нет** |
+| `standard` debug build | `./gradlew :app:assembleStandardDebug` | **yes** |
+| `aa` debug build | `./gradlew :app:assembleAaDebug` | **yes** |
+| 25 JVM tests | `./gradlew :app:testStandardDebugUnitTest` | **yes** |
+| Android 15 emulator: dashboard, Data, settings, LIVE via ELM327 stub | emulator | **yes** |
+| Widget placed and configured | Android 15 emulator launcher | **yes** |
+| Widget live value updates | live connection | **no** |
+| Real phone | hardware | **no** |
+| Android Auto head unit / DHU | Car App Library host | **no** |
+| AARE / DashGrid | actual host and display | **no** |
+| Real car | VAG MQB vehicle | **no** |
+| Bluetooth and USB on live adapters | hardware | **no** |
 
-Эмуляция и ДЕМО **не являются** подтверждением совместимости с автомобилем.
-Это правило записано в ТЗ и соблюдается в документации: у 44 сигналов статус
-«декодирован» и только у одного — «описан». Статус «подтверждён» пока не
-получил ни один сигнал.
+Unit tests, emulator runs and renders are **not** compatibility proof. The catalog still has 44
+signals marked “decoded” and one “described”; none is confirmed on a vehicle. The exact open points
+are in [TEST_PLAN.md](TEST_PLAN.md) and [COMPATIBILITY.md](COMPATIBILITY.md).
 
-## Сборка
+## Build
 
-Нужны JDK 17+, Android SDK с platform 36 и build-tools 36.0.0.
+Needs JDK 17+ and Android SDK with platform 36 and build-tools 36.0.0:
 
 ```sh
 echo "sdk.dir=/path/to/android-sdk" > local.properties
 
-# обычная сборка
+# standard build
 ./gradlew :app:assembleStandardDebug
 
-# сборка с Android Auto
+# Android Auto build
 ./gradlew :app:assembleAaDebug
 ```
 
-APK:
+Outputs:
 
 ```text
 app/build/outputs/apk/standard/debug/app-standard-debug.apk
 app/build/outputs/apk/aa/debug/app-aa-debug.apk
 ```
 
-Тесты:
+Tests:
 
 ```sh
 ./gradlew :app:testStandardDebugUnitTest
 ```
 
-Для подписанного release-APK задайте переменные окружения — паролей в
-репозитории нет:
+<details>
+<summary>Release signing</summary>
+
+Signing reads environment variables; no passwords are stored in the repository:
 
 ```sh
 export VAGDIAG_KEYSTORE=/path/to/keystore.jks
@@ -327,9 +315,11 @@ export VAGDIAG_KEYPASS=...
 ./gradlew :app:assembleStandardRelease :app:assembleAaRelease
 ```
 
-Если `VAGDIAG_KEYSTORE` не задан, release собирается неподписанным.
+Without `VAGDIAG_KEYSTORE`, the release APK is unsigned.
 
-## Архитектура
+</details>
+
+## Architecture
 
 ```text
 CockpitActivity     AppWidget     CarAppService (aa)     SettingsActivity
@@ -339,121 +329,112 @@ CockpitActivity     AppWidget     CarAppService (aa)     SettingsActivity
                        TelemetryEngine  ──►  SignalCatalog
                               │
                        SignalSource
-                       ├── DemoSignalSource   — модель, без автомобиля
+                       ├── DemoSignalSource   — no car required
                        └── Elm327SignalSource — OBD-II mode 01
                               │
                            Elm327  ──►  Transport (Wi-Fi / Bluetooth / USB)
 ```
 
-`Telemetry` — единственный владелец соединения и движка телеметрии. Все
-представления подписываются на его состояние и не создают вторую сессию.
-Рядом живёт `TelemetryService`: foreground-статус, уведомление и обновление
-виджетов.
+`Telemetry` is the only owner of the telemetry connection and engine. Every surface subscribes to its
+state and never opens a second telemetry session. `TelemetryService` runs alongside it for the
+foreground status, notification and widget refresh.
 
-Диагностический экран VAG Diag работает со своим `Elm327` и не входит
-в это дерево. Команды синхронизированы внутри объекта, но два соединения
-могут конкурировать за шину — не запускайте сканирование одновременно
-с телеметрией.
+The VAG Diag screen keeps its own `Elm327` and is outside this tree. Commands are serialized inside
+one adapter object, but the two connections can still compete for the bus.
 
-Каталог не знает о движке, движок — об Android, интерфейс — о транспорте.
-Поэтому декодирование и расписание опроса проверяются обычными JVM-тестами.
+The catalog knows nothing about the engine, the engine knows nothing about Android, and the UI knows
+nothing about the transport. That is why decoding and polling can be tested with plain JVM tests.
 
-Подробнее: [`ARCHITECTURE.md`](ARCHITECTURE.md).
+More: [ARCHITECTURE.md](ARCHITECTURE.md).
 
-## Каталог сигналов
+## Signal catalog
 
-| Группа | Сигналов |
+| Group | Signals |
 |---|---:|
-| Двигатель | 22 |
-| Температуры | 4 |
-| Топливо | 10 |
-| Экология | 4 |
-| Электрика | 1 |
-| Диагностика | 3 |
-| Трансмиссия | 1 (виртуальный) |
-| **Всего** | **45** |
+| Engine | 22 |
+| Temperatures | 4 |
+| Fuel | 10 |
+| Emissions | 4 |
+| Electrical | 1 |
+| Diagnostics | 3 |
+| Transmission | 1 (virtual) |
+| **Total** | **45** |
 
-Расширенных DID VAG (DSG, Haldex, DPF, наддув из блока двигателя) в каталоге
-пока нет: для них нужны проверенные идентификаторы и формулы, а не догадки.
-Состав и статусы — в [`SIGNAL_CATALOG.md`](SIGNAL_CATALOG.md).
+Extended VAG DIDs (DSG, Haldex, DPF, engine-side boost) are not in the catalog yet: they need
+verified identifiers and formulas, not guesses. See [SIGNAL_CATALOG.md](SIGNAL_CATALOG.md).
 
-## Ограничения
+## Limitations
 
-- Нет проверки на реальном устройстве, автомобиле, головном устройстве
-  Android Auto и живых адаптерах Bluetooth/USB.
-- Android Auto — только шаблонный список, без произвольного Canvas.
-  Для публикации в Google Play нужен белый список хостов и проверка категории;
-  в сборке для сайдлоада и AARE стоит `ALLOW_ALL_HOSTS_VALIDATOR`.
-- AARE/DashGrid: отдельной интеграции нет; AppWidgetHost в DashGrid
-  не реализован на стороне хоста.
-- Профили выбираются вручную; определения по VIN нет.
-- Нет расширенных DID, записи поездок, истории, графиков и экспорта.
-- Нет конструктора дашбордов.
-- Нет KWP2000 и TP2.0; BLE-адаптеры не поддерживаются.
-- Автоматического переподключения после обрыва нет: автоподключение работает
-  только при запуске.
-- Сборки `standard` и `aa` используют один `applicationId` и не могут стоять
-  одновременно.
-- Диагностический экран открывает собственное соединение с адаптером.
-  Не запускайте сканирование блоков и телеметрию одновременно.
+- No hardware verification: no real phone, car, head unit or live Bluetooth/USB adapter.
+- Android Auto is a template list only. Google Play publication needs a host allowlist and category
+  review; sideloading and AARE use `ALLOW_ALL_HOSTS_VALIDATOR`.
+- AARE/DashGrid: no dedicated integration, and DashGrid’s AppWidgetHost is not implemented on the
+  host side.
+- Profiles are manual; there is no VIN-based selection.
+- No extended DIDs, trip recording, history, graphs or export.
+- No dashboard editor.
+- No KWP2000 or TP2.0; BLE adapters are not supported.
+- No automatic reconnect after a drop; auto-connect works at app start only.
+- The `standard` and `aa` builds share one `applicationId` and cannot be installed together.
+- Diagnostics opens its own adapter connection; do not scan modules while telemetry is running.
 
-Ближайшие версии и приоритеты — в [`ROADMAP.md`](ROADMAP.md) и
-[`BACKLOG.md`](BACKLOG.md).
+The next versions and priorities are in [ROADMAP.md](ROADMAP.md) and [BACKLOG.md](BACKLOG.md).
 
-## Безопасность
+## Security and privacy
 
-Приложение задумано как монитор. Новый интерфейс телеметрии выполняет только
-чтение. Диагностический экран унаследован от VAG Diag вместе с ручным
-стиранием ошибок — это единственная операция записи; она выполняется по
-нажатию и никогда автоматически.
+The app is a monitor. The telemetry interface only reads. The diagnostics screen inherited from VAG
+Diag includes manual DTC clearing — the only write operation; it runs on an explicit tap and never
+automatically.
 
-Сеть используется только для связи с Wi-Fi-адаптером. Данные автомобиля не
-отправляются сторонним сервисам, аналитики и трекеров нет. Foreground-служба
-показывает постоянное уведомление и не скрывает свою работу.
+Network access is used only for the Wi-Fi adapter. Vehicle data is not sent to third-party services;
+there are no analytics, trackers or crash reporters. The foreground service shows a persistent
+notification and does not hide its work.
 
-Для сборки `aa` используется `HostValidator.ALLOW_ALL_HOSTS_VALIDATOR`:
-это нужно для сайдлоада и AARE, но для публикации в Google Play потребуется
-белый список хостов. Подробнее: [`SECURITY.md`](SECURITY.md).
+The `aa` build uses `HostValidator.ALLOW_ALL_HOSTS_VALIDATOR` for sideloading and AARE. A Google Play
+release would need a host allowlist. More: [SECURITY.md](SECURITY.md).
 
-## Документация
+## Documentation
 
-| Файл | О чём |
+| File | About |
 |---|---|
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | слои, движок, общее соединение, ограничения |
-| [`RESEARCH.md`](RESEARCH.md) | что изучено, commit SHA, лицензии, решения |
-| [`SIGNAL_CATALOG.md`](SIGNAL_CATALOG.md) | счётчики и состав каталога |
-| [`COMPATIBILITY.md`](COMPATIBILITY.md) | автомобили, адаптеры, протоколы, поверхности |
-| [`SECURITY.md`](SECURITY.md) | границы записи, разрешения, зависимости |
-| [`TEST_PLAN.md`](TEST_PLAN.md) | автотесты и ручные сценарии |
-| [`ROADMAP.md`](ROADMAP.md) | этапы и их состояние |
-| [`BACKLOG.md`](BACKLOG.md) | приоритетный список работ |
-| [`docs/WIDGET.md`](docs/WIDGET.md) | виджет: размеры, темы, обновление |
-| [`docs/AA.md`](docs/AA.md) | Android Auto: сборка, шаблоны, проверка |
-| [`docs/AARE_DASHGRID.md`](docs/AARE_DASHGRID.md) | полноэкранная приборка на AARE |
-| [`docs/SPEC.md`](docs/SPEC.md) | полное техническое задание |
-| [`CHANGELOG.md`](CHANGELOG.md) | история изменений |
-| [`docs/releases/0.3.0.md`](docs/releases/0.3.0.md) | релизные заметки 0.3.0 |
-| [`docs/releases/0.2.0.md`](docs/releases/0.2.0.md) | релизные заметки 0.2.0 |
-| [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) | происхождение кода и лицензии |
+| [README.ru.md](README.ru.md) | Full Russian translation of this file |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Layers, engine, shared connection, widget and AA |
+| [RESEARCH.md](RESEARCH.md) | Sources studied, commit SHAs, licences, decisions |
+| [SIGNAL_CATALOG.md](SIGNAL_CATALOG.md) | Catalog counts and signal origins |
+| [COMPATIBILITY.md](COMPATIBILITY.md) | Cars, adapters, protocols and surfaces |
+| [SECURITY.md](SECURITY.md) | Write boundaries, permissions, dependencies |
+| [TEST_PLAN.md](TEST_PLAN.md) | Automated tests and manual scenarios |
+| [ROADMAP.md](ROADMAP.md) | Stages and their state |
+| [BACKLOG.md](BACKLOG.md) | Prioritized work |
+| [docs/WIDGET.md](docs/WIDGET.md) | Widget sizes, themes and refresh |
+| [docs/AA.md](docs/AA.md) | Android Auto build, templates and testing |
+| [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md) | Full dashboard on AARE/DashGrid |
+| [docs/SPEC.md](docs/SPEC.md) | Full technical specification |
+| [CHANGELOG.md](CHANGELOG.md) | Change history |
+| [docs/releases/0.3.0.md](docs/releases/0.3.0.md) | 0.3.0 release notes |
+| [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) | Code and asset provenance |
 
-## Участие
+## Contributing
 
-Проект открыт для помощи, но данные важнее энтузиазма:
+The project is open to help, but data beats enthusiasm:
 
-- **Проверка на автомобиле.** Методика — в [`TEST_PLAN.md`](TEST_PLAN.md).
-  Результаты записывайте в [`COMPATIBILITY.md`](COMPATIBILITY.md), а не
-  в переписку.
-- **Новые сигналы.** Принимаются только с подтверждённым PID/DID, формулой
-  и источником. До чтения на автомобиле статус остаётся «описан» или
-  «декодирован».
-- **Ошибки.** Приложите модель адаптера, версию Android, экран и шаги
-  воспроизведения. Если возможно — лог `adb logcat`.
+- **Test on a car.** The checklist is in [TEST_PLAN.md](TEST_PLAN.md). Record results in
+  [COMPATIBILITY.md](COMPATIBILITY.md), not in a chat thread.
+- **Add signals carefully.** A new signal needs a verified PID/DID, formula and source. Until it is
+  read on a car, its status stays “described” or “decoded”.
+- **Report bugs.** Include adapter model, Android version, screen, steps to reproduce and, if
+  possible, `adb logcat`.
+- **Translate.** The English README is the main one; [README.ru.md](README.ru.md) is maintained
+  alongside it.
 
-## Лицензия
+## License
 
-MIT. Основа — Android-приложение [VAG Diag](https://github.com/gdm0991/vagdiag)
-(MIT, commit `c2d565f`). Диагностическое ядро сохранено; каталог, движок
-телеметрии, приборная панель, виджет и автомобильный экран написаны для
-этого проекта. Подробности — в [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+MIT. The diagnostics core is based on [VAG Diag](https://github.com/gdm0991/vagdiag) (MIT, commit
+`c2d565f`). The catalog, telemetry engine, dashboard, widget and car screen were written for this
+project. Titillium Web is used under the SIL Open Font License; AndroidX, Compose and Car App Library
+are Apache 2.0; `usb-serial-for-android` is MIT. Details are in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-<p align="center"><sub>Сделано для VAG — и для всех, кому мало стрелки температуры.</sub></p>
+Android Auto is a Google trademark; this project is not affiliated with Google.
+
+<p align="center"><sub>Built for VAG — and for everyone who finds a temperature needle insufficient.</sub></p>
