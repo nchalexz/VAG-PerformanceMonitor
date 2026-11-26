@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nchalexz/AAPerformanceMonitor/releases"><img alt="Version 0.3.0" src="https://img.shields.io/badge/version-0.3.0-E5484D?style=flat-square"></a>
+  <a href="https://github.com/nchalexz/AAPerformanceMonitor/releases"><img alt="Version 0.4.0" src="https://img.shields.io/badge/version-0.4.0-E5484D?style=flat-square"></a>
   <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/license-MIT-38BDF8?style=flat-square"></a>
   <a href="#install"><img alt="Android 7.0+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white"></a>
   <a href="build.gradle.kts"><img alt="Kotlin 2.2" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?style=flat-square&logo=kotlin&logoColor=white"></a>
@@ -32,13 +32,17 @@
 </p>
 
 > [!WARNING]
-> **0.3.0 is a test build, not a verified release.**
+> **0.4.0 is a test build, not a verified release.**
 > It runs on an Android 15 emulator against a software ELM327 stub, but it has **not been tested in a
 > car**, on a real phone, on an Android Auto head unit or on live Bluetooth/USB adapters. No signal
 > has been confirmed on a vehicle. See [What is tested](#what-is-tested-what-is-not).
 
 > [!NOTE]
-> **По-русски.** 0.3.0 — тестовая сборка для телеметрии VAG: 45 сигналов, приборка, виджет и
+> 0.4.0 contains the new dashboard and the VAG UDS catalog described below. It is still not
+> verified in a car, on a head unit or with live adapters.
+
+> [!NOTE]
+> **По-русски.** 0.4.0 — тестовая сборка для телеметрии VAG: 129 сигналов, приборка, виджет и
 > отдельная AA-сборка. Проверено на эмуляторе Android 15 с программной заглушкой ELM327; на
 > реальном автомобиле, телефоне и головном устройстве — нет. Сборки `standard` и `aa` используют
 > один `applicationId`, поэтому ставьте только одну. Полный перевод и подробности —
@@ -69,22 +73,24 @@ Three principles shaped the app:
 ## Interface
 
 <p align="center">
-  <img src="docs/assets/screen-driving.png" width="31%" alt="Driving screen: three dials and five tiles">
-  <img src="docs/assets/screen-performance.png" width="31%" alt="Performance screen: boost, power, torque and temperatures">
-  <img src="docs/assets/screen-data.png" width="31%" alt="Data screen: signal catalog with search and verification status">
+  <img src="docs/assets/screen-driving.png" width="31%" alt="Dashboard: three analog gauges and five tiles">
+  <img src="docs/assets/screen-performance.png" width="31%" alt="Extended dashboard: category tabs and adaptive metric grid">
+  <img src="docs/assets/screen-data.png" width="31%" alt="Data catalog: OBD-II and VAG UDS signals with requests and values">
 </p>
 
-<p align="center"><sub>Screenshots from the Android 15 emulator, running LIVE against a software ELM327 stub. They are not a car and not proof of compatibility.</sub></p>
+<p align="center"><sub>Screenshots from the Android 15 emulator at 1920×720, Demo Mode. They are not a car and not proof of compatibility.</sub></p>
 
 | Part | What it does |
 |---|---|
-| **Driving** | Coolant, boost and oil temperature in three dials; speed, RPM, gear, fuel rate and fuel level in tiles. |
-| **Performance** | Boost, calculated power and torque, RPM, load, fuel-rail pressure and temperatures. |
-| **Data** | The full catalog with search, category filter, current value, PID/DID, ECU, protocol and verification status. |
+| **Dashboard** | Coolant, boost and oil temperature in three analog-digital gauges; speed, RPM, gear, instant consumption and fuel level in five tiles. Opens by default. |
+| **Extended dashboard** | The same three gauges smaller, a category bar (Engine, Temperatures, Fuel, Gearbox, Turbo, Diagnostics) and an adaptive grid — five columns on a wide screen. Tapping a gauge opens its category. |
+| **Data catalog** | All 129 signals with search, category filter, value, request (PID/DID), ECU, protocol and verification status. |
+| **Day theme** | The same composition with separate light tokens, not an inverted image. See [screen-day.png](docs/assets/screen-day.png). |
 
-The mode is switched in **Settings**: **Connect** for ELM327 or **Demo**. When a connection is
-active, the dashboard header offers a quick return to demo; the gear icon opens vehicle and adapter
-settings.
+Swipe horizontally between the two dashboards. Theme and label language are set in
+**Settings → Cluster**: Auto / Day / Night and System / English / Russian. English is the default;
+a Russian system switches the labels automatically. The selected category survives restarts, while
+the dashboard always opens first.
 
 ## Android Auto
 
@@ -132,26 +138,44 @@ owns its own `Elm327`, so the two should not scan at the same time.
 
 **Telemetry**
 
-- 45 signals: 41 standard OBD-II PIDs, 3 calculated values and 1 virtual signal.
-- A subscription engine with dashboard priority, adaptive polling, exponential backoff and data-age
-  tracking.
-- Calculated torque, power and boost; they turn into “no data” when their inputs are missing or
-  stale.
+- 129 signals: 41 standard OBD-II PIDs, 4 calculated values, 1 virtual signal and 83 VAG-specific
+  UDS `22 <DID>` signals for MQB TDI.
+- Subscription engine with fair polling for mixed OBD/UDS, adaptive rates, exponential backoff and
+  data-age tracking.
+- Calculated torque, power, boost and instant l/100 km. They become “no data” when inputs are
+  missing; consumption is undefined at standstill instead of infinite.
 - One process-wide repository: dashboard, widget and car screen read the same `StateFlow`.
 - Last-value cache, saved adapter and auto-connect on app start.
 
-**Dashboard**
+**Dashboard and UI**
 
-- Three screens: Driving, Performance and the Data catalog.
-- Dark VAG cluster styling: thin scales, large values, muted labels and red warning zones.
-- Unsupported or stale signals show “—” instead of zero.
-- Demo data is always marked with a **DEMO** badge.
+- Dashboard and Extended Dashboard plus an overlay data catalog; swipe, gauge-to-category tap and
+  back navigation.
+- Three analog-digital gauges and five tiles, then an adaptive five-column grid: the composition of
+  the reference mockups.
+- Day and night themes with separate tokens; Auto follows the system, with a manual override.
+- English and Russian labels. English by default; Russian on a Russian system; manual override.
+- Unsupported, stale or missing values show “—” and a status dot, never a zero.
+- Demo Mode starts on the mockup values (86 °C, 0.62 bar, 95 °C, 96 km/h, 1840 rpm, gear 5, 48 %,
+  21 %, 19 %, 162 kPa, 100 kPa, 42.5 g/s, 14.6 V, 58 %) and is always marked **DEMO**.
+
+**VAG-specific data**
+
+- UDS `22 <DID>` reader over ELM327 with per-module headers, 11-bit CAN, flow-control retries and a
+  short per-DID cache; the next OBD request returns to header `7DF`.
+- 83 signals derived from the open **OBDb/Audi-Q3** set (CC BY-SA 4.0, commit `b51e835`): boost
+  actual/specified, rail pressure, injection deviations, DSG oil and clutch temperatures, clutch
+  pressures, DPF soot, exhaust temperatures, battery sensor and engine/cluster oil temperature.
+- Read-only: only `22` and `3E` are sent. Signals that need the extended session `10 03` are
+  excluded; there is no coding, adaptation or actuator test.
+- Every VAG signal is marked **decoded**, not “confirmed on car”. The vehicle still has to prove it.
 
 **Settings and profiles**
 
 - Adapter choice: Wi-Fi, Bluetooth SPP or USB serial, with connect, demo and disconnect in one place.
 - Auto-connect to the saved adapter at launch.
 - Editable profiles: VAG MQB and a generic OBD-II profile, with a manual signal selection.
+- Cluster theme and label language, saved between launches.
 - A VIN field exists, but there is no automatic VIN lookup yet.
 
 **Widget and Android Auto**
@@ -174,12 +198,12 @@ owns its own `Elm327`, so the two should not scan at the same time.
 
 **Verification**
 
-- 25 JVM tests: decoding, catalog integrity, payload parsing, polling schedule, backoff, staleness and
-  demo-model consistency.
+- 50 JVM tests: decoding, UDS bit fields, catalog integrity, payload parsing, polling schedule,
+  backoff, staleness, fuel consumption and demo-model consistency.
+- A fake ELM327 transport test covers OBD→UDS header switching and negative UDS answers.
 - Demo mode opens every screen without an adapter or a car.
-- Dashboard, Data, settings and LIVE via the ELM327 stub were checked on an Android 15 emulator. The
-  widget was placed on the launcher and its configurator saves parameters; live widget updates were
-  not verified. A real phone and car were not tested.
+- Dashboard, Extended Dashboard, catalog, settings, themes and languages were checked on an
+  Android 15 emulator at 1920×720. The real car, phone and head unit were not.
 
 ## Install
 
@@ -187,8 +211,8 @@ The two builds share one `applicationId` and **replace each other** when install
 
 | Build | What is inside | Size |
 |---|---|---|
-| `standard` | Dashboard, widget, diagnostics; no Android Auto. | ≈18.9 MB |
-| `aa` | The same plus Android Auto (Car App Library). | ≈20.2 MB |
+| `standard` | Dashboard, widget, diagnostics; no Android Auto. | ≈18.8 MB |
+| `aa` | The same plus Android Auto (Car App Library). | ≈20.1 MB |
 
 Requirements: Android 7.0+ (API 24), an ELM327 over Wi-Fi, Bluetooth SPP or USB serial, and network,
 Bluetooth, USB-host and notification permissions. Google Mobile Services are not required.
@@ -201,18 +225,18 @@ Through `adb`:
 
 ```sh
 # standard build
-adb install -r AA-Performance-Monitor-0.3.0-standard.apk
+adb install -r AA-Performance-Monitor-0.4.0-standard.apk
 
 # Android Auto build
-adb install -r AA-Performance-Monitor-0.3.0-AA.apk
+adb install -r AA-Performance-Monitor-0.4.0-AA.apk
 ```
 
 <details>
 <summary>SHA-256 and signing certificate</summary>
 
 ```text
-ac125e4117362547899e87795737269d5234234b6905b613bd214ba41d6a6b6c  AA-Performance-Monitor-0.3.0-standard.apk
-237b2c68e44e0425d957259d13c64f3defb929f539d43d0abb4c070a16581f8a  AA-Performance-Monitor-0.3.0-AA.apk
+072e127c68b3c418e9cad40030d9f05d8fa6088661f1bf26f553033423ce8816  AA-Performance-Monitor-0.4.0-standard.apk
+c383041c8e6fffe0d97efdb9aec38d429b73d503fc1ffd2e3e7c5c33162c484b  AA-Performance-Monitor-0.4.0-AA.apk
 certificate SHA-256: 36df845b5efe80088341e5ddaf9e69817194871c1318f2638661526c5baff917
 ```
 
@@ -231,7 +255,7 @@ The APKs are signed with the Android Debug key (`CN=Android Debug`). Check with
 
 1. Open the app; the diagnostics screen appears.
 2. Tap the gauges icon in the top bar.
-3. Switch between Driving, Performance and Data: values change coherently with no adapter and no car.
+3. Swipe between Dashboard and Extended Dashboard and open categories: the Demo badge marks simulated data; no adapter or car is needed.
 4. Open the gear icon to choose a profile, signal set and adapter.
 5. Add the “Telemetry AA” widget from the launcher and pick up to four parameters.
 
@@ -263,8 +287,9 @@ bug.
 |---|---|---|
 | `standard` debug build | `./gradlew :app:assembleStandardDebug` | **yes** |
 | `aa` debug build | `./gradlew :app:assembleAaDebug` | **yes** |
-| 25 JVM tests | `./gradlew :app:testStandardDebugUnitTest` | **yes** |
-| Android 15 emulator: dashboard, Data, settings, LIVE via ELM327 stub | emulator | **yes** |
+| 50 JVM tests | `./gradlew :app:testStandardDebugUnitTest` | **yes** |
+| Android 15 emulator: Dashboard, Extended, catalog, settings, themes/language, LIVE via ELM327 stub | emulator | **yes** |
+| VAG UDS decode and OBD/UDS header switching | fake ELM327 transport, JVM test | **yes** |
 | Widget placed and configured | Android 15 emulator launcher | **yes** |
 | Widget live value updates | live connection | **no** |
 | Real phone | hardware | **no** |
@@ -273,8 +298,9 @@ bug.
 | Real car | VAG MQB vehicle | **no** |
 | Bluetooth and USB on live adapters | hardware | **no** |
 
-Unit tests, emulator runs and renders are **not** compatibility proof. The catalog still has 44
-signals marked “decoded” and one “described”; none is confirmed on a vehicle. The exact open points
+Unit tests, emulator runs and renders are **not** compatibility proof. The catalog has 128 signals
+marked “decoded” and one “described”; none is confirmed on a vehicle. The 83 VAG DIDs have never
+answered on a real MQB TDI yet. The exact open points
 are in [TEST_PLAN.md](TEST_PLAN.md) and [COMPATIBILITY.md](COMPATIBILITY.md).
 
 ## Build
@@ -332,7 +358,7 @@ CockpitActivity     AppWidget     CarAppService (aa)     SettingsActivity
                               │
                        SignalSource
                        ├── DemoSignalSource   — no car required
-                       └── Elm327SignalSource — OBD-II mode 01
+                       └── Elm327SignalSource — OBD-II mode 01 and UDS 22 <DID>
                               │
                            Elm327  ──►  Transport (Wi-Fi / Bluetooth / USB)
 ```
@@ -353,17 +379,19 @@ More: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 | Group | Signals |
 |---|---:|
-| Engine | 22 |
-| Temperatures | 4 |
-| Fuel | 10 |
+| Engine | 34 |
+| Temperatures | 13 |
+| Fuel | 20 |
 | Emissions | 4 |
 | Electrical | 1 |
-| Diagnostics | 3 |
-| Transmission | 1 (virtual) |
-| **Total** | **45** |
+| Diagnostics | 27 |
+| Transmission | 30 |
+| **Total** | **129** |
 
-Extended VAG DIDs (DSG, Haldex, DPF, engine-side boost) are not in the catalog yet: they need
-verified identifiers and formulas, not guesses. See [SIGNAL_CATALOG.md](SIGNAL_CATALOG.md).
+Breakdown: 41 measured OBD-II PIDs, 4 calculated values, 1 virtual signal and 83 VAG UDS signals.
+The VAG set is derived from OBDb/Audi-Q3 (CC BY-SA 4.0); every entry is marked “decoded”, and none
+is confirmed on a car. See [SIGNAL_CATALOG.md](SIGNAL_CATALOG.md) and
+[tools/README.md](tools/README.md).
 
 ## Limitations
 
@@ -373,8 +401,12 @@ verified identifiers and formulas, not guesses. See [SIGNAL_CATALOG.md](SIGNAL_C
 - AARE/DashGrid: no dedicated integration, and DashGrid’s AppWidgetHost is not implemented on the
   host side.
 - Profiles are manual; there is no VIN-based selection.
-- No extended DIDs, trip recording, history, graphs or export.
-- No dashboard editor.
+- VAG DIDs come from one open Audi-Q3 set. They are decoded, not confirmed on an MQB TDI; some
+  blocks will refuse a DID or answer only after `10 03`, which this app does not send.
+- Only `22` reads and `3E` keep-alive are sent. There is no ODX/VCDS import, no session change,
+  no coding or adaptation, and no DPF regeneration.
+- No trip recording, history, graphs or export.
+- No dashboard editor; the five tiles and three gauges are fixed for now.
 - No KWP2000 or TP2.0; BLE adapters are not supported.
 - No automatic reconnect after a drop; auto-connect works at app start only.
 - The `standard` and `aa` builds share one `applicationId` and cannot be installed together.
@@ -408,13 +440,16 @@ release would need a host allowlist. More: [SECURITY.md](SECURITY.md).
 | [TEST_PLAN.md](TEST_PLAN.md) | Automated tests and manual scenarios |
 | [ROADMAP.md](ROADMAP.md) | Stages and their state |
 | [BACKLOG.md](BACKLOG.md) | Prioritized work |
+| [docs/UI.md](docs/UI.md) | Dashboard design system, components, themes and navigation |
 | [docs/WIDGET.md](docs/WIDGET.md) | Widget sizes, themes and refresh |
 | [docs/AA.md](docs/AA.md) | Android Auto build, templates and testing |
 | [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md) | Full dashboard on AARE/DashGrid |
 | [docs/SPEC.md](docs/SPEC.md) | Full technical specification |
 | [CHANGELOG.md](CHANGELOG.md) | Change history |
+| [docs/releases/0.4.0.md](docs/releases/0.4.0.md) | 0.4.0 release notes |
 | [docs/releases/0.3.0.md](docs/releases/0.3.0.md) | 0.3.0 release notes |
-| [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) | Code and asset provenance |
+| [tools/README.md](tools/README.md) | Regenerating the open VAG signal set |
+| [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) | Code, data and asset provenance |
 
 ## Contributing
 

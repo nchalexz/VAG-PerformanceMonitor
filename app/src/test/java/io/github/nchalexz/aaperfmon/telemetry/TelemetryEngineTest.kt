@@ -113,6 +113,52 @@ class TelemetryEngineTest {
     }
 
     @Test
+    fun `fuel consumption is computed from rate and speed`() = runTest {
+        val source = FakeSource(
+            mapOf(
+                SignalCatalog.Ids.FUEL_RATE to Reading(5.0, ReadingState.OK),
+                SignalCatalog.Ids.SPEED to Reading(100.0, ReadingState.OK),
+            ),
+        )
+        val engine = TelemetryEngine(
+            source = source,
+            scope = this,
+            clock = { testScheduler.currentTime },
+        )
+        engine.setDashboard(listOf(SignalCatalog.Ids.FUEL_L100))
+        engine.start()
+        advanceTimeBy(2_000)
+        runCurrent()
+        engine.stop()
+
+        assertEquals(5.0, engine.values.value[SignalCatalog.Ids.FUEL_L100]!!.value!!, 0.001)
+    }
+
+    @Test
+    fun `fuel consumption is undefined at standstill`() = runTest {
+        val source = FakeSource(
+            mapOf(
+                SignalCatalog.Ids.FUEL_RATE to Reading(5.0, ReadingState.OK),
+                SignalCatalog.Ids.SPEED to Reading(0.0, ReadingState.OK),
+            ),
+        )
+        val engine = TelemetryEngine(
+            source = source,
+            scope = this,
+            clock = { testScheduler.currentTime },
+        )
+        engine.setDashboard(listOf(SignalCatalog.Ids.FUEL_L100))
+        engine.start()
+        advanceTimeBy(2_000)
+        runCurrent()
+        engine.stop()
+
+        val value = engine.values.value[SignalCatalog.Ids.FUEL_L100]!!
+        assertEquals(ReadingState.UNSUPPORTED, value.state)
+        assertEquals(null, value.value)
+    }
+
+    @Test
     fun `unsupported signal is retried with backoff`() = runTest {
         val source = FakeSource(emptyMap())
         val engine = TelemetryEngine(

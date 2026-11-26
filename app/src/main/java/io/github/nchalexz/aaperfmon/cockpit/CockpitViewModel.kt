@@ -3,9 +3,9 @@ package io.github.nchalexz.aaperfmon.cockpit
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.nchalexz.aaperfmon.cockpit.ui.DisplayCategory
+import io.github.nchalexz.aaperfmon.cockpit.ui.MetricRegistry
 import io.github.nchalexz.aaperfmon.telemetry.ConnectionKind
-import io.github.nchalexz.aaperfmon.telemetry.DashboardSpec
-import io.github.nchalexz.aaperfmon.telemetry.Dashboards
 import io.github.nchalexz.aaperfmon.telemetry.SignalCatalog
 import io.github.nchalexz.aaperfmon.telemetry.SignalValue
 import io.github.nchalexz.aaperfmon.telemetry.Telemetry
@@ -16,25 +16,24 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 
-/** Что сейчас открыто в приборке. */
-enum class CockpitScreen { DRIVING, PERFORMANCE, DATA }
-
-/** Состояние экрана приборов. */
+/** Состояние приборки: только данные, без Compose и без знания о раскладке. */
 data class CockpitUiState(
     val values: Map<String, SignalValue> = emptyMap(),
-    val now: Long = 0,
+    val now: Long = 0L,
+    val connection: ConnectionKind = ConnectionKind.DEMO,
     val demo: Boolean = true,
     val live: Boolean = false,
-    val sourceLabel: String = "ДЕМО",
+    val canShowData: Boolean = true,
     val channel: String = "",
     val error: String = "",
 )
 
 /**
- * Экран приборов больше не владеет движком: он только подписывается на
- * общий [Telemetry] и просит нужные сигналы. Соединение открывается в
- * настройках и живёт в сервисе, поэтому виджет и автомобильный экран
- * видят те же данные.
+ * Экран приборов не владеет движком: он подписывается на общий [Telemetry]
+ * и просит только те сигналы, которые сейчас видны. Главный экран — три
+ * прибора и пять плиток; расширенный — те же приборы и одна категория.
+ * Поэтому смена категории меняет набор опрашиваемых PID, а не грузит шину
+ * всем каталогом.
  */
 class CockpitViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -45,9 +44,15 @@ class CockpitViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private var page: CockpitPage = CockpitPage.DASHBOARD
+    private var category: DisplayCategory = DisplayCategory.ENGINE
+    private var catalogEnabled = false
+
     init {
         Telemetry.init(application)
-        selectScreen(CockpitScreen.DRIVING)
+        CockpitPrefs.init(application)
+        category = DisplayCategory.byId(CockpitPrefs.state.value.categoryId)
+        subscribe()
     }
 
     val state: StateFlow<CockpitUiState> = combine(
@@ -57,16 +62,14 @@ class CockpitViewModel(application: Application) : AndroidViewModel(application)
         CockpitUiState(
             values = telemetry.values,
             now = now,
+            connection = telemetry.connection,
             demo = telemetry.connection == ConnectionKind.DEMO,
             live = telemetry.connection == ConnectionKind.CONNECTED,
-            sourceLabel = when (telemetry.connection) {
-                ConnectionKind.DEMO -> "ДЕМО"
-                ConnectionKind.CONNECTED -> "LIVE"
-                ConnectionKind.CONNECTING -> "ПОДКЛЮЧЕНИЕ"
-                ConnectionKind.ERROR -> "ОШИБКА"
-                ConnectionKind.DISCONNECTED -> "НЕТ СВЯЗИ"
+            canShowData = telemetry.canShowData,
+            channel = when (telemetry.connection) {
+                ConnectionKind.CONNECTED -> telemetry.connectionLabel
+                else -> ""
             },
-            channel = telemetry.message.ifBlank { telemetry.connectionLabel },
             error = if (telemetry.connection == ConnectionKind.ERROR) telemetry.message else "",
         )
     }.stateIn(
@@ -75,26 +78,26 @@ class CockpitViewModel(application: Application) : AndroidViewModel(application)
         CockpitUiState(),
     )
 
-    fun selectScreen(screen: CockpitScreen) {
-        val panel = listOf(
-            SignalCatalog.Ids.POWER_KW,
-            SignalCatalog.Ids.TORQUE_NM,
-            SignalCatalog.Ids.LOAD,
-            SignalCatalog.Ids.VOLTAGE,
-        )
-        when (screen) {
-            CockpitScreen.DRIVING -> {
-                Telemetry.subscribe("cockpit", Dashboards.driving.signalIds + panel)
-                Telemetry.setCatalogEnabled(false)
-            }
-            CockpitScreen.PERFORMANCE -> {
-                Telemetry.subscribe("cockpit", Dashboards.performance.signalIds + panel)
-                Telemetry.setCatalogEnabled(false)
-            }
-            CockpitScreen.DATA -> {
-                Telemetry.subscribe("cockpit", emptyList())
-                Telemetry.setCatalogEnabled(true)
-            }
+    /** Переключение экрана или категории: подписка меняется сразу. */
+    fun show(newPage: CockpitPage, newCategory: DisplayCategory) {
+        val categoryChanged = newCategory != category
+        page = newPage
+        category = newCategory
+        if (categoryChanged && newPage == CockpitPage.EXTENDED) {
+            CockpitPrefs.setCategory(newCategory.id)
+        }
+        subscribe()
+    }
+
+    /** Каталог открывается поверх приборки и один опрашивает все сигналы. */
+    fun setCatalogVisible(visible: Boolean) {
+        catalogEnabled = visible
+        Telemetry.setCatalogEnabled(visible)
+        if (visible) {
+            Telemetry.setCatalog(SignalCatalog.all.map { it.id })
+            Telemetry.subscribe(SUBSCRIPTION, emptyList())
+        } else {
+            subscribe()
         }
     }
 
@@ -102,15 +105,30 @@ class CockpitViewModel(application: Application) : AndroidViewModel(application)
         Telemetry.useDemo()
     }
 
-    fun dashboard(screen: CockpitScreen): DashboardSpec? = when (screen) {
-        CockpitScreen.DRIVING -> Dashboards.driving
-        CockpitScreen.PERFORMANCE -> Dashboards.performance
-        CockpitScreen.DATA -> null
+    private fun subscribe() {
+        if (catalogEnabled) return
+        val includeVirtual = Telemetry.state.value.connection == ConnectionKind.DEMO
+        val ids = buildList {
+            addAll(MetricRegistry.gauges.flatMap { it.allSignalIds })
+            when (page) {
+                CockpitPage.DASHBOARD -> addAll(MetricRegistry.mainTiles.flatMap { it.allSignalIds })
+                CockpitPage.EXTENDED -> addAll(
+                    MetricRegistry.category(category, includeVirtual)
+                        .flatMap { it.allSignalIds },
+                )
+            }
+        }
+        Telemetry.subscribe(SUBSCRIPTION, ids)
+        Telemetry.setCatalogEnabled(false)
     }
 
     override fun onCleared() {
-        Telemetry.subscribe("cockpit", emptyList())
+        Telemetry.subscribe(SUBSCRIPTION, emptyList())
         Telemetry.setCatalogEnabled(false)
         super.onCleared()
+    }
+
+    private companion object {
+        const val SUBSCRIPTION = "cockpit"
     }
 }

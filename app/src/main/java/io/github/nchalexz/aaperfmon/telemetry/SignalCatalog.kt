@@ -42,6 +42,7 @@ object SignalCatalog {
         const val POWER_KW = "engine.power_kw"
         const val FUEL_LEVEL = "fuel.level_pct"
         const val FUEL_RATE = "fuel.rate_lph"
+        const val FUEL_L100 = "fuel.l100_km"
         const val FUEL_PRESSURE = "fuel.pressure_kpa"
         const val RAIL_PRESSURE = "fuel.rail_kpa"
         const val RAIL_REL = "fuel.rail_relative_kpa"
@@ -106,7 +107,8 @@ object SignalCatalog {
     private fun word(scale: Double = 1.0, bias: Double = 0.0, signed: Boolean = false) =
         ValueSpec(length = 2, scale = scale, bias = bias, signed = signed)
 
-    val all: List<SignalDefinition> = buildList {
+    /** Стандартные OBD-II PID и вычисляемые величины. */
+    private val obdSignals: List<SignalDefinition> = buildList {
         // -- двигатель ------------------------------------------------------
         add(
             obd(
@@ -433,6 +435,23 @@ object SignalCatalog {
                 note = "Избыточное давление: отрицательное значение — разрежение.",
             )
         )
+        add(
+            SignalDefinition(
+                id = Ids.FUEL_L100,
+                nameRu = "Мгновенный расход",
+                nameEn = "Instant consumption",
+                category = SignalCategory.FUEL,
+                computed = ComputedSpec(ComputedKind.FUEL_L100, listOf(Ids.FUEL_RATE, Ids.SPEED)),
+                unit = "л/100 км",
+                decimals = 1,
+                minValue = 0.0,
+                maxValue = 50.0,
+                pollHz = 2.0,
+                source = "Вычисление: PID 0x5E (л/ч) ÷ PID 0x0D (км/ч) × 100",
+                verification = Verification.DECODED,
+                note = "На стоянке не определён: показывается «—», а не ноль.",
+            )
+        )
 
         // -- виртуальные (появятся с профилем VAG) ---------------------------
         add(
@@ -455,6 +474,13 @@ object SignalCatalog {
         )
     }
 
+    /**
+     * Полный каталог: стандартные PID, вычисляемые показатели и VAG-сигналы
+     * из UDS. Последние читаются только через `22 <DID>` и не выдаются за
+     * подтверждённые: статус остаётся DECODED.
+     */
+    val all: List<SignalDefinition> = obdSignals + VagSignals.all
+
     private val index: Map<String, SignalDefinition> = all.associateBy { it.id }
 
     fun get(id: String): SignalDefinition? = index[id]
@@ -464,6 +490,9 @@ object SignalCatalog {
 
     /** Сигналы, которые движок считает сам из уже прочитанных. */
     val computed: List<SignalDefinition> = all.filter { it.isComputed }
+
+    /** VAG-сигналы, читаемые по UDS `22 <DID>`. */
+    val uds: List<SignalDefinition> = all.filter { it.isUds }
 
     fun byCategory(): Map<SignalCategory, List<SignalDefinition>> =
         all.groupBy { it.category }.toSortedMap(compareBy { it.ordinal })

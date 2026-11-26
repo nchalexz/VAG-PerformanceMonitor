@@ -33,6 +33,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## OBDb/Audi-Q3 signal set
+
+- Source: https://github.com/OBDb/Audi-Q3
+- Commit: `b51e835ab75b8bed9ad17f5a31ca4d1d13f22676` (2026-11-21)
+- Licence: Creative Commons Attribution-ShareAlike 4.0 International
+  (CC BY-SA 4.0), https://creativecommons.org/licenses/by-sa/4.0/
+- Reused: 83 VAG MQB TDI signal descriptions — CAN headers, UDS DIDs, bit
+  offsets, lengths, signedness, byte order, multipliers/dividers/addends and
+  names. The selected source commands are vendored in
+  `tools/obdb-audi-q3.json`; the generated Kotlin is
+  `app/src/main/java/io/github/nchalexz/aaperfmon/telemetry/VagSignals.kt`.
+- The derived signal data is distributed under CC BY-SA 4.0. The application
+  code around it remains MIT; the data is attributed here and in the generated
+  file header.
+- No OBDb data was confirmed on a vehicle for this project. The formulas are
+  “decoded”, not “confirmed”.
+
 ## Titillium Web
 
 - Source: https://github.com/google/fonts/tree/main/ofl/titilliumweb

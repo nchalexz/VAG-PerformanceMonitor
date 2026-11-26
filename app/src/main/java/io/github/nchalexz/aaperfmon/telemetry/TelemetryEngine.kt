@@ -214,6 +214,18 @@ class TelemetryEngine(
                 ComputedKind.TORQUE_NM -> a / 100.0 * b
                 ComputedKind.POWER_KW -> a * b / 9549.0
                 ComputedKind.BOOST_KPA -> a - b
+                // Ниже 3 км/ч деление на скорость даёт мусор: это «нет
+                // данных», а не бесконечный расход и не ноль.
+                ComputedKind.FUEL_L100 -> if (b < 3.0) null else a / b * 100.0
+            }
+            if (value == null) {
+                updates[definition.id] = SignalValue(
+                    value = null,
+                    timestampMs = now,
+                    state = ReadingState.UNSUPPORTED,
+                    sourceLabel = "расчёт",
+                )
+                continue
             }
             updates[definition.id] = SignalValue(
                 value = value,

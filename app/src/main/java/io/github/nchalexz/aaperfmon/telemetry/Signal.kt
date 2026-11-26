@@ -100,6 +100,57 @@ data class ValueSpec(
     }
 }
 
+/**
+ * Декодирование ответа UDS `22 <DID>`.
+ *
+ * VAG-блоки отдают значение не с начала ответа, а с произвольного бита,
+ * иногда младшим байтом вперёд. Формула взята из описания сигнала:
+ * `(raw × mul ÷ div) + add`. Нулевой указатель здесь не нужен: биты
+ * считаются от первого байта полезной нагрузки (после 62 DID DID).
+ */
+data class UdsValueSpec(
+    val bitOffset: Int = 0,
+    val bitLength: Int = 8,
+    val signed: Boolean = false,
+    val littleEndian: Boolean = false,
+    val mul: Double = 1.0,
+    val div: Double = 1.0,
+    val add: Double = 0.0,
+) {
+    fun decode(payload: ByteArray): Double? {
+        if (bitLength <= 0 || bitLength > 32) return null
+        if (bitOffset < 0 || bitOffset + bitLength > payload.size * 8) return null
+
+        val raw = if (bitOffset % 8 == 0 && bitLength % 8 == 0) {
+            val start = bitOffset / 8
+            val count = bitLength / 8
+            val bytes = payload.copyOfRange(start, start + count)
+            if (littleEndian) bytes.reverse()
+            var value = 0L
+            for (byte in bytes) value = (value shl 8) or (byte.toLong() and 0xFF)
+            if (signed) signExtend(value, bitLength) else value
+        } else {
+            // Неровные битовые поля читаем MSB-first, как их описывает OBDb.
+            var value = 0L
+            for (i in 0 until bitLength) {
+                val position = bitOffset + i
+                val byte = payload[position / 8].toInt() and 0xFF
+                val bit = (byte shr (7 - position % 8)) and 1
+                value = (value shl 1) or bit.toLong()
+            }
+            if (signed) signExtend(value, bitLength) else value
+        }
+        val value = raw.toDouble() * mul / div + add
+        return if (value.isNaN() || value.isInfinite()) null else value
+    }
+
+    private fun signExtend(value: Long, bits: Int): Long {
+        if (bits <= 0 || bits >= 64) return value
+        val shift = 64 - bits
+        return (value shl shift) shr shift
+    }
+}
+
 /** Какой показатель вычисляется из других сигналов. */
 enum class ComputedKind {
     /** Фактический момент, Н·м: процент из PID 0x62 от опорного момента 0x63. */
@@ -110,6 +161,12 @@ enum class ComputedKind {
 
     /** Наддув, кПа: абсолютное давление во впуске минус атмосферное. */
     BOOST_KPA,
+
+    /**
+     * Мгновенный расход, л/100 км: расход в л/ч делится на скорость.
+     * На стоянке показатель не определён — это не ноль, а «нет данных».
+     */
+    FUEL_L100,
 }
 
 /** Вычисляемый сигнал и его зависимости. */
@@ -138,7 +195,14 @@ data class SignalDefinition(
     val pid: Int? = null,
     /** DID для UDS. */
     val did: Int? = null,
+    /** Декодер стандартного PID (OBD-II). */
     val decode: ValueSpec? = null,
+    /** Декодер ответа UDS `22 <DID>`. */
+    val uds: UdsValueSpec? = null,
+    /** Адрес запроса для UDS: 0x7E0 — двигатель, 0x7E1 — коробка, 0x714 — щиток. */
+    val txId: Int? = null,
+    /** Адрес ответа: 0x7E8, 0x7E9, 0x77E. Если null, адаптер слушает сам. */
+    val rxId: Int? = null,
     val computed: ComputedSpec? = null,
     val unit: String = "",
     val decimals: Int = 0,
@@ -151,6 +215,7 @@ data class SignalDefinition(
     val note: String = "",
 ) {
     val isMeasured: Boolean get() = decode != null && protocol == Protocol.OBD2 && pid != null
+    val isUds: Boolean get() = protocol == Protocol.UDS && did != null && uds != null && txId != null
     val isComputed: Boolean get() = computed != null
 
     /** Интервал опроса в миллисекундах, но не чаще одного раза в 100 мс. */

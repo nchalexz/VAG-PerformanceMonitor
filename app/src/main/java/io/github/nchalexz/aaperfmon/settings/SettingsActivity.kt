@@ -55,6 +55,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.nchalexz.aaperfmon.telemetry.ConnectionKind
+import io.github.nchalexz.aaperfmon.cockpit.CockpitPrefs
+import io.github.nchalexz.aaperfmon.cockpit.LanguageMode
+import io.github.nchalexz.aaperfmon.cockpit.ThemeMode
 import io.github.nchalexz.aaperfmon.telemetry.ReadingState
 import io.github.nchalexz.aaperfmon.telemetry.SignalCatalog
 import io.github.nchalexz.aaperfmon.telemetry.SignalValue
@@ -109,6 +112,7 @@ fun SettingsScreen(onClose: () -> Unit, model: SettingsViewModel = viewModel()) 
 
             Column(Modifier.verticalScroll(rememberScrollState()).weight(1f)) {
                 StatusCard(telemetry.connection, telemetry.connectionLabel, telemetry.message)
+                CockpitSettingsCard()
 
                 if (message.isNotBlank()) {
                     Text(
@@ -260,6 +264,51 @@ fun SettingsScreen(onClose: () -> Unit, model: SettingsViewModel = viewModel()) 
                 model.setSignals(it)
                 pickerOpen = false
             },
+        )
+    }
+}
+
+@Composable
+private fun CockpitSettingsCard() {
+    val settings by CockpitPrefs.state.collectAsState()
+    Card("Приборка") {
+        Text("Тема", color = DimColor, fontSize = 12.sp)
+        Spacer(Modifier.height(4.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf(
+                ThemeMode.AUTO to "Авто",
+                ThemeMode.DAY to "День",
+                ThemeMode.NIGHT to "Ночь",
+            ).forEach { (mode, label) ->
+                FilterChip(
+                    selected = settings.themeMode == mode,
+                    onClick = { CockpitPrefs.setThemeMode(mode) },
+                    label = { Text(label, fontSize = 11.sp) },
+                )
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        Text("Язык подписей", color = DimColor, fontSize = 12.sp)
+        Spacer(Modifier.height(4.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf(
+                LanguageMode.SYSTEM to "Система",
+                LanguageMode.ENGLISH to "English",
+                LanguageMode.RUSSIAN to "Русский",
+            ).forEach { (mode, label) ->
+                FilterChip(
+                    selected = settings.languageMode == mode,
+                    onClick = { CockpitPrefs.setLanguageMode(mode) },
+                    label = { Text(label, fontSize = 11.sp) },
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "По умолчанию английский, на русской системе включается русский. " +
+                "Тема «Авто» следует системной ночи/дню.",
+            color = DimColor,
+            fontSize = 11.sp,
         )
     }
 }

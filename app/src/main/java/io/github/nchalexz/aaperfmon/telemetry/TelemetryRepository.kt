@@ -177,6 +177,11 @@ object Telemetry {
         engine?.setCatalogEnabled(enabled)
     }
 
+    /** Какие сигналы опрашивать, пока открыт каталог. */
+    fun setCatalog(ids: Collection<String>) {
+        engine?.setCatalog(ids)
+    }
+
     @Synchronized
     fun saveProfile(profile: VehicleProfile) {
         if (!initialized) return

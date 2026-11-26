@@ -11,6 +11,7 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
+import io.github.nchalexz.aaperfmon.cockpit.CockpitPrefs
 import io.github.nchalexz.aaperfmon.telemetry.AdapterConfig
 import io.github.nchalexz.aaperfmon.telemetry.AdapterStore
 import io.github.nchalexz.aaperfmon.telemetry.ConnectionKind
@@ -77,6 +78,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     init {
         Telemetry.init(app)
+        CockpitPrefs.init(app)
         ContextCompat.registerReceiver(
             app,
             usbReceiver,

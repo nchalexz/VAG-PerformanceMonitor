@@ -34,6 +34,37 @@ class DemoSignalSourceTest {
     }
 
     @Test
+    fun `demo starts on the mockup values`() = runTest {
+        val source = DemoSignalSource(clock = { 0L })
+        suspend fun value(id: String): Double =
+            source.read(SignalCatalog.get(id)!!).value!!
+
+        assertEquals(96.0, value(SignalCatalog.Ids.SPEED), 0.001)
+        assertEquals(1840.0, value(SignalCatalog.Ids.RPM), 0.001)
+        assertEquals(5.0, value(SignalCatalog.Ids.GEAR), 0.001)
+        assertEquals(48.0, value(SignalCatalog.Ids.LOAD), 0.001)
+        assertEquals(86.0, value(SignalCatalog.Ids.COOLANT), 0.001)
+        assertEquals(95.0, value(SignalCatalog.Ids.OIL_TEMP), 0.001)
+        assertEquals(62.0, value(SignalCatalog.Ids.BOOST), 0.001)
+        assertEquals(42.5, value(SignalCatalog.Ids.MAF), 0.001)
+        assertEquals(14.6, value(SignalCatalog.Ids.VOLTAGE), 0.001)
+        assertEquals(58.0, value(SignalCatalog.Ids.FUEL_LEVEL), 0.001)
+    }
+
+    @Test
+    fun `demo also feeds VAG signals`() = runTest {
+        val source = DemoSignalSource(clock = { 0L })
+        suspend fun value(id: String): Double =
+            source.read(SignalCatalog.get(id)!!).value!!
+
+        assertEquals(1.62, value("vag.7e0.1057.boost"), 0.001)
+        assertEquals(82.0, value("vag.7e1.2104.atf_temp"), 0.001)
+        assertEquals(5.0, value("vag.7e1.210f.gear"), 0.001)
+        assertEquals(6.4, value("vag.7e0.114e.soot_measured"), 0.001)
+        assertEquals(95.0, value("vag.7e0.11be.oil_temp"), 0.001)
+    }
+
+    @Test
     fun `unknown signal is reported unsupported`() = runTest {
         val source = DemoSignalSource()
         val reading = source.read(
