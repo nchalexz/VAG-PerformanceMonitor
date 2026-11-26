@@ -47,3 +47,15 @@ SOFTWARE.
 ## USB-serial drivers
 
 - `com.github.mik3y:usb-serial-for-android` (MIT) — pulled from JitPack as the base project did.
+
+## AA Performance Monitor (this fork)
+
+- Source: https://github.com/nchalexz/AAPerformanceMonitor
+- Licence: MIT
+- Added for this project: `telemetry/` (catalog, decoders, engine, sources,
+  dashboards), `cockpit/` (dashboard and Live Data UI), `core/AdapterHolder.kt`,
+  tests in `app/src/test/`, project documentation.
+- The demo model in `DemoSignalSource` is synthetic. It is not a recording of
+  a real car and must not be treated as compatibility evidence.
+- The visual dashboard follows the MIB/Porsche cluster style described in the
+  specification; the implementation is original code, not copied assets.

@@ -126,6 +126,7 @@ class Elm327(private val transport: Transport) {
      * Перед отправкой чистится буфер: иначе ответ на предыдущую команду
      * читается как ответ на текущую, и данные разных блоков перемешиваются.
      */
+    @Synchronized
     fun command(text: String, timeoutMs: Long = 1200): List<String> {
         drain(30)
         transport.write((text + "\r").toByteArray(Charsets.US_ASCII))

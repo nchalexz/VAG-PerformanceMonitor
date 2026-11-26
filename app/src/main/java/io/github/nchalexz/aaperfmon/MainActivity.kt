@@ -38,8 +38,7 @@ class MainActivity : ComponentActivity() {
                     Manifest.permission.BLUETOOTH_SCAN)
         else
             arrayOf(Manifest.permission.BLUETOOTH,
-                    Manifest.permission.BLUETOOTH_ADMIN,
-                    Manifest.permission.ACCESS_FINE_LOCATION)
+                    Manifest.permission.BLUETOOTH_ADMIN)
 
     private val askPermissions =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }

@@ -13,8 +13,8 @@ android {
         applicationId = "io.github.nchalexz.aaperfmon"
         minSdk = 24                 // Android 7, охватывает почти все живые телефоны
         targetSdk = 36              // требование Google Play с 31.08.2026
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
     }
 
     // Подпись включается ТОЛЬКО когда задана переменная окружения
@@ -61,6 +61,10 @@ android {
     buildFeatures {
         compose = true
     }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -81,4 +85,9 @@ dependencies {
     // Драйверы CH340, FTDI, CP210x, PL2303 — микросхемы, которые стоят
     // внутри USB-адаптеров ELM327. Единственная внешняя зависимость.
     implementation("com.github.mik3y:usb-serial-for-android:3.11.0")
+
+    // Тесты каталога и движка телеметрии — обычные JVM-тесты: ни эмулятор,
+    // ни автомобиль для них не нужны.
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
 }

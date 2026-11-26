@@ -269,6 +269,7 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
         }.getOrDefault("")
 
         elm = adapter
+        AdapterHolder.attach(adapter, transport.title)
         _state.update {
             it.copy(connected = true, adapterTitle = transport.title,
                     adapterVersion = version, voltage = voltage, warning = warning)
@@ -282,6 +283,7 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
         loopJob?.cancel()
         runCatching { elm?.close() }
         elm = null
+        AdapterHolder.detach()
         _state.update {
             it.copy(connected = false, adapterTitle = "", adapterVersion = "",
                     voltage = "", warning = "", monitorRunning = false,
