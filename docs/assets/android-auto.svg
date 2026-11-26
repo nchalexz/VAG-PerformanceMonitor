@@ -8,37 +8,37 @@
 <g stroke="#FFFFFF" stroke-opacity="0.85" fill="none" stroke-width="2.4" transform="translate(1432,26)"><path d="M0 8c4-4 12-4 16 0M3 12c3-3 7-3 10 0"/><circle cx="8" cy="16" r="1.6" fill="#FFFFFF"/></g>
 <rect x="1496" y="24" width="34" height="18" rx="3" fill="none" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="2"/><rect x="1532" y="30" width="3" height="6" fill="#FFFFFF" fill-opacity="0.8"/><rect x="1500" y="28" width="22" height="10" rx="1" fill="#4ADE80"/>
 <g transform="translate(48,104)"><rect x="0" y="0" width="52" height="34" rx="7" fill="none" stroke="#38BDF8" stroke-width="2.6"/><rect x="7" y="10" width="6" height="7" fill="#38BDF8"/><rect x="17" y="10" width="6" height="7" fill="#38BDF8"/><rect x="27" y="10" width="6" height="7" fill="#38BDF8"/><rect x="37" y="10" width="6" height="7" fill="#38BDF8"/><rect x="21" y="34" width="10" height="8" fill="#4ADE80"/></g>
-<text x="124" y="132" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="34" font-weight="600">VAG Performance</text>
+<text x="124" y="132" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="34" font-weight="600">VAG Performance Monitor</text>
 <text x="124" y="164" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="19">ДЕМО · данные модели</text>
 <line x1="48" y1="196" x2="1552" y2="196" stroke="#22FFFFFF"/>
 <text x="52" y="255" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">Состояние</text>
 <text x="1548" y="255" text-anchor="end" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">ДЕМО · данные модели</text>
 <line x1="48" y1="282" x2="1552" y2="282" stroke="#22FFFFFF"/>
 <text x="52" y="327" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">Охлаждающая жидкость</text>
-<text x="1548" y="327" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">90 °C</text>
+<text x="1548" y="327" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">86 °C</text>
 <line x1="48" y1="354" x2="1552" y2="354" stroke="#22FFFFFF"/>
 <text x="52" y="399" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">Наддув</text>
-<text x="1548" y="399" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">60 кПа</text>
+<text x="1548" y="399" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">62 кПа</text>
 <line x1="48" y1="426" x2="1552" y2="426" stroke="#22FFFFFF"/>
 <text x="52" y="471" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">Масло двигателя</text>
-<text x="1548" y="471" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">96 °C</text>
+<text x="1548" y="471" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">95 °C</text>
 <line x1="48" y1="498" x2="1552" y2="498" stroke="#22FFFFFF"/>
 <text x="52" y="543" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">Скорость автомобиля</text>
-<text x="1548" y="543" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">84 км/ч</text>
+<text x="1548" y="543" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">96 км/ч</text>
 <line x1="48" y1="570" x2="1552" y2="570" stroke="#22FFFFFF"/>
 <text x="52" y="615" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">Обороты двигателя</text>
-<text x="1548" y="615" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">1750 об/мин</text>
+<text x="1548" y="615" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">1840 об/мин</text>
 <line x1="48" y1="642" x2="1552" y2="642" stroke="#22FFFFFF"/>
 <text x="52" y="687" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">Передача</text>
-<text x="1548" y="687" text-anchor="end" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">—</text>
+<text x="1548" y="687" text-anchor="end" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">5</text>
 <line x1="48" y1="714" x2="1552" y2="714" stroke="#22FFFFFF"/>
 <text x="52" y="759" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">Расход топлива</text>
-<text x="1548" y="759" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">5.4 л/ч</text>
+<text x="1548" y="759" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">4,8 л/ч</text>
 <line x1="48" y1="786" x2="1552" y2="786" stroke="#22FFFFFF"/>
 <text x="52" y="831" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">Остаток топлива</text>
-<text x="1548" y="831" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">57 %</text>
+<text x="1548" y="831" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">58 %</text>
 <line x1="48" y1="858" x2="1552" y2="858" stroke="#22FFFFFF"/>
 <text x="52" y="888" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="15">Список шаблона Car App Library · до 8 параметров профиля</text>
 <text x="48" y="944" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="15" letter-spacing="1.3">МАКЕТ ЭКРАНА ANDROID AUTO (LISTTEMPLATE) · ДАННЫЕ ДЕМОНСТРАЦИОННЫЕ · НЕ СНИМОК С ГОЛОВНОГО УСТРОЙСТВА</text>
-<text x="1552" y="944" text-anchor="end" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="15" letter-spacing="1.3" opacity="0.8">0.4.0</text>
+<text x="1552" y="944" text-anchor="end" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="15" letter-spacing="1.3" opacity="0.8">0.4.1</text>
 </svg>
