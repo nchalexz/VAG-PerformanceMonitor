@@ -129,7 +129,7 @@ More: [docs/AA.md](docs/AA.md) and [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md
 |---|---|---|
 | **Phone dashboard** | Full-screen gauges and tiles with demo/live switching. | Shared `Telemetry` state |
 | **Home-screen widget** | Up to four parameters or a compact two-parameter layout. | Shared `Telemetry` state |
-| **Android Auto / AARE** | A template list in the `aa` build; AARE can show the full dashboard as an ordinary Activity where the host allows it. | Shared `Telemetry` state |
+| **Android Auto / AARE** | A template list in the `aa` build. On DashGrid 1.3.0 the cockpit is drawn by DashGrid from VPM’s read-only snapshot; VPM’s own `CockpitActivity` stays unexported. | Shared `Telemetry` state / snapshot |
 
 All three read one `StateFlow` from the process-wide `Telemetry` object, and the widget is refreshed by
 `TelemetryService`. A second OBD session is not opened. The diagnostics screen is the exception: it
@@ -194,11 +194,11 @@ owns its own `Elm327`, so the two should not scan at the same time.
 - ELM327 transports: Wi-Fi, Bluetooth SPP and USB serial (CH340, FTDI, CP210x, PL2303).
 - The inherited VAG Diag screen: connect, scan modules, read and manually clear DTCs, OBD-II engine
   data, live data and a report.
-- The full dashboard is an ordinary Activity, but `CockpitActivity` is `exported="false"`: AARE
-  and DashGrid can show it only where the host may launch the app. For DashGrid 1.3.0 there is a
-  read-only telemetry bridge instead: `call("snapshot")` on the provider returns the current
-  values, so DashGrid draws its own cockpit without opening OBD. The bridge is contract v1; the
-  service and the cockpit Activity stay `exported="false"`.
+- The full dashboard is an ordinary Activity, but `CockpitActivity` is `exported="false"`, so
+  another app cannot launch it. VPM stays standalone: its phone dashboard, widget and diagnostics
+  need no host. On a car screen DashGrid 1.3.0 draws its own cockpit from the read-only bridge
+  (`call("snapshot")` returns the current values, no OBD opened by DashGrid). The bridge is
+  contract v1; the service and the cockpit Activity stay `exported="false"`.
 
 **Verification**
 
