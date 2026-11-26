@@ -229,7 +229,7 @@ fun SettingsScreen(onClose: () -> Unit, model: SettingsViewModel = viewModel()) 
                     Spacer(Modifier.height(6.dp))
                     Button(onClick = model::saveProfile) { Text("Сохранить профиль") }
                     TextButton(onClick = model::resetProfile) {
-                        Text("Сбросить на Golf 7.5", color = DimColor, fontSize = 12.sp)
+                        Text("Сбросить на VAG MQB", color = DimColor, fontSize = 12.sp)
                     }
                 }
 

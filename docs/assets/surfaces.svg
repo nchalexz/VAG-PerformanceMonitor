@@ -148,7 +148,7 @@
 <rect x="104" y="492" width="54" height="3" rx="1.5" fill="#38BDF8"/>
 <rect x="464" y="206" width="284" height="196" rx="20" fill="#000" fill-opacity="0.35"/>
 <rect x="456" y="196" width="284" height="196" rx="20" fill="#F4F5F7" stroke="#000" stroke-opacity="0.12"/>
-<text x="474" y="226" fill="#101418" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="12" font-weight="600">VW Golf 7.5 Alltrack</text>
+<text x="474" y="226" fill="#101418" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="12" font-weight="600">VAG MQB</text>
 <text x="722" y="226" text-anchor="end" fill="#9A5B00" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="8" letter-spacing="0.8">ДЕМО</text>
 <text x="474" y="252" fill="#5D6874" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="7.5" letter-spacing="0.8">ОЖ</text>
 <text x="474" y="275" fill="#101418" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="22" font-weight="600">90</text>
@@ -187,7 +187,7 @@
 <line x1="858" y1="358" x2="1110" y2="358" stroke="#FFFFFF" stroke-opacity="0.07"/>
 <text x="860" y="372" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10.5">Скорость</text>
 <text x="1108" y="372" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10.5">84 км/ч</text>
-<text x="474" y="505" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="9" letter-spacing="0.6">2×2 или компактный · до 4 параметров</text>
+<text x="474" y="505" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="9" letter-spacing="0.6">4 параметра · компактный — 2</text>
 <text x="860" y="505" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="9" letter-spacing="0.6">Шаблонный список · без произвольного Canvas</text>
 <text x="40" y="580" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10" letter-spacing="1.1" opacity="0.8">МАКЕТЫ ИНТЕРФЕЙСА · ДАННЫЕ ДЕМОНСТРАЦИОННЫЕ · НЕ СКРИНШОТЫ С УСТРОЙСТВ</text>
 <text x="1160" y="580" text-anchor="end" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10" letter-spacing="1.1" opacity="0.8">0.3.0</text>

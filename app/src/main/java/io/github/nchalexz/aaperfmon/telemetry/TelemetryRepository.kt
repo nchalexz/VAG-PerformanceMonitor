@@ -27,7 +27,7 @@ data class TelemetryState(
     val connectionLabel: String = "ДЕМО",
     val message: String = "",
     val values: Map<String, SignalValue> = emptyMap(),
-    val profile: VehicleProfile = VehicleProfiles.golf75,
+    val profile: VehicleProfile = VehicleProfiles.mqb,
     val lastUpdateMs: Long = 0L,
 ) {
     val isDemo: Boolean get() = connection == ConnectionKind.DEMO

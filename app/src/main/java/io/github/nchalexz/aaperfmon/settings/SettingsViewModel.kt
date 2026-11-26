@@ -33,7 +33,7 @@ data class SettingsForm(
     val port: String = "35000",
     val devices: List<DeviceOption> = emptyList(),
     val selectedDevice: String = "",
-    val profile: VehicleProfile = VehicleProfiles.golf75,
+    val profile: VehicleProfile = VehicleProfiles.mqb,
     val message: String = "",
 )
 
@@ -236,7 +236,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         val profile = VehicleStore.reset(app)
         _form.update { it.copy(profile = profile) }
         Telemetry.saveProfile(profile)
-        _message.value = "Профиль сброшен на Golf 7.5"
+        _message.value = "Профиль сброшен на VAG MQB"
     }
 
     fun clearMessage() {

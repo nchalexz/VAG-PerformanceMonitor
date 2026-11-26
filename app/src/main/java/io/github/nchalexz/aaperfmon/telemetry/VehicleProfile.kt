@@ -35,12 +35,12 @@ object VehicleProfiles {
         Dashboards.driving.signalIds + Dashboards.performance.signalIds
         ).distinct()
 
-    val golf75 = VehicleProfile(
-        id = "golf75-cuna",
-        name = "VW Golf 7.5 Alltrack",
+    val mqb = VehicleProfile(
+        id = "vag-mqb",
+        name = "VAG MQB",
         platform = "MQB",
-        engine = "2.0 TDI CUNA",
-        transmission = "DQ381",
+        engine = "",
+        transmission = "",
         vin = "",
         signalIds = defaultSignals.toSet(),
         builtIn = true,
@@ -57,10 +57,10 @@ object VehicleProfiles {
         builtIn = true,
     )
 
-    val builtIn: List<VehicleProfile> = listOf(golf75, universal)
+    val builtIn: List<VehicleProfile> = listOf(mqb, universal)
 
     fun byId(id: String): VehicleProfile =
-        builtIn.firstOrNull { it.id == id } ?: golf75
+        builtIn.firstOrNull { it.id == id } ?: mqb
 }
 
 /**
@@ -74,8 +74,8 @@ object VehicleStore {
     fun load(context: Context): VehicleProfile {
         val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString(KEY_PROFILE, null)
-            ?: return VehicleProfiles.golf75
-        return runCatching { fromJson(JSONObject(raw)) }.getOrElse { VehicleProfiles.golf75 }
+            ?: return VehicleProfiles.mqb
+        return runCatching { fromJson(JSONObject(raw)) }.getOrElse { VehicleProfiles.mqb }
     }
 
     fun save(context: Context, profile: VehicleProfile) {
@@ -88,7 +88,7 @@ object VehicleStore {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .remove(KEY_PROFILE)
             .apply()
-        return VehicleProfiles.golf75
+        return VehicleProfiles.mqb
     }
 
     fun toJson(profile: VehicleProfile): JSONObject = JSONObject()
@@ -115,7 +115,7 @@ object VehicleStore {
             engine = json.optString("engine", ""),
             transmission = json.optString("transmission", ""),
             vin = json.optString("vin", ""),
-            signalIds = signals.ifEmpty { VehicleProfiles.golf75.signalIds },
+            signalIds = signals.ifEmpty { VehicleProfiles.mqb.signalIds },
             builtIn = json.optBoolean("builtIn", false),
         )
     }
