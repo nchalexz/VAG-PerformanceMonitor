@@ -14,11 +14,21 @@
 
 Работать только в репозитории DashGrid. Репозиторий VPM и его APK не менять.
 
+Эталоны экранов и геометрия (абсолютные ссылки для другой сессии):
+
+- ТЗ по макетам: https://github.com/nchalexz/VAG-PerformanceMonitor/blob/main/docs/dashgrid/README.md
+- Главный экран: https://raw.githubusercontent.com/nchalexz/VAG-PerformanceMonitor/main/docs/dashgrid/01-main.png
+- Экран категорий: https://raw.githubusercontent.com/nchalexz/VAG-PerformanceMonitor/main/docs/dashgrid/02-categories.png
+- Исходная геометрия VPM: https://github.com/nchalexz/VAG-PerformanceMonitor/blob/main/app/src/main/java/io/github/nchalexz/aaperfmon/cockpit/ui/Gauge.kt
+
+Это не «референс вообще», а точная композиция VPM 0.4.1, которую панель
+DashGrid должна воспроизвести один в один.
+
 ## Контекст
 
-- VPM 0.4.0: `io.github.nchalexz.aaperfmon`.
+- VPM 0.4.1: `io.github.nchalexz.aaperfmon`.
   Репозиторий: https://github.com/nchalexz/VAG-PerformanceMonitor
-  Тег: `v0.4.0`.
+  Тег: `v0.4.1`.
 - В VPM два полноэкранных режима: главный экран (три аналогово-цифровых
   прибора и пять плиток) и расширенный (те же приборы, категории и адаптивная
   сетка). Оба реализованы в `io.github.nchalexz.aaperfmon.cockpit.CockpitActivity`.
