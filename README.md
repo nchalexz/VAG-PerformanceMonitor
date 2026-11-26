@@ -32,7 +32,7 @@
 </p>
 
 > [!WARNING]
-> **0.5.0 is a test build, not a verified release.**
+> **0.5.0 is a pre-release test build, not a verified release.**
 > It runs on an Android 15 emulator against a software ELM327 stub, but it has **not been tested in a
 > car**, on a real phone, on an Android Auto head unit or on live Bluetooth/USB adapters. No signal
 > has been confirmed on a vehicle. See [What is tested](#what-is-tested-what-is-not).
@@ -120,10 +120,10 @@ More: [docs/AA.md](docs/AA.md) and [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md
 ## One telemetry — three surfaces
 
 <p align="center">
-  <img src="docs/assets/surfaces.svg" alt="0.4.1 mockup of three surfaces: dashboard, widget and Android Auto" width="100%">
+  <img src="docs/assets/surfaces.svg" alt="0.5.0 mockup of three surfaces: dashboard, widget and Android Auto" width="100%">
 </p>
 
-<p align="center"><sub>A 0.4.1 mockup, not screenshots: the dashboard, widget and car screen read one state.</sub></p>
+<p align="center"><sub>A 0.5.0 mockup, not screenshots: the dashboard, widget and car screen read one state.</sub></p>
 
 | Surface | What it shows | Connection |
 |---|---|---|
@@ -293,12 +293,13 @@ bug.
 |---|---|---|
 | `standard` debug build | `./gradlew :app:assembleStandardDebug` | **yes** |
 | `aa` debug build | `./gradlew :app:assembleAaDebug` | **yes** |
-| 50 JVM tests | `./gradlew :app:testStandardDebugUnitTest` | **yes** |
+| 61 JVM tests | `./gradlew :app:testStandardDebugUnitTest` | **yes** |
 | Android 15 emulator: Dashboard, Extended, catalog, settings, themes/language, LIVE via ELM327 stub | emulator | **yes** |
 | VAG UDS decode and OBD/UDS header switching | fake ELM327 transport, JVM test | **yes** |
 | Widget placed and configured | Android 15 emulator launcher | **yes** |
 | Widget live value updates | live connection | **no** |
 | Real phone | hardware | **no** |
+| DashGrid 1.3.0 native cockpit | Android 15 emulator, contract v1 `call("snapshot")` | **yes** |
 | Android Auto head unit / DHU | Car App Library host | **no** |
 | AARE / DashGrid | actual host and display | **no** |
 | Real car | VAG MQB vehicle | **no** |
