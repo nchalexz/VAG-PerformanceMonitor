@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="AA Performance Monitor — VAG telemetry through an ordinary ELM327" width="100%">
+  <img src="docs/assets/banner.svg" alt="VAG Performance Monitor — VAG telemetry through an ordinary ELM327" width="100%">
 </p>
 
 <p align="center">
@@ -50,7 +50,7 @@
 
 ## What this is
 
-AA Performance Monitor is a standalone Android app for continuous VAG telemetry. It grew out of the
+VAG Performance Monitor is a standalone Android app for continuous VAG telemetry. It grew out of the
 [VAG Diag](https://github.com/gdm0991/vagdiag) diagnostics core, but solves a different problem:
 not a one-off fault scan, but gauges that stay in view while you drive.
 
@@ -95,7 +95,7 @@ the dashboard always opens first.
 ## Android Auto
 
 <p align="center">
-  <img src="docs/assets/android-auto.png" width="100%" alt="Render of the AA Performance ListTemplate screen with status and signal rows">
+  <img src="docs/assets/android-auto.png" width="100%" alt="Render of the VAG Performance ListTemplate screen with status and signal rows">
 </p>
 
 <p align="center"><sub>Render of the actual <code>ListTemplate</code>, not a head-unit screenshot. A real screenshot is not available: the emulator ships stub Android Auto, and neither DHU nor a head unit was tested.</sub></p>
@@ -112,7 +112,7 @@ Android Auto is a separate **`aa`** build, not a mode of the standard one. It re
 - The build has not been tested on a head unit or in the Desktop Head Unit. If a host does not list
   the app, that is a host limitation, not a missing `CarAppService`.
 - To test locally, install `*-AA.apk`, connect the phone to a DHU or head unit and open
-  “AA Performance” from the host app list.
+  “VAG Performance” from the host app list.
 
 More: [docs/AA.md](docs/AA.md) and [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md).
 
@@ -180,7 +180,7 @@ owns its own `Elm327`, so the two should not scan at the same time.
 
 **Widget and Android Auto**
 
-- “Telemetry AA” widget: up to four parameters or a compact two-parameter layout, per-instance
+- “Telemetry VAG” widget: up to four parameters or a compact two-parameter layout, per-instance
   configuration, light/dark theme and tap-to-open.
 - `aa` build with Android Auto through Car App Library 1.7.0: connection state and up to eight
   profile parameters in a template list.
@@ -257,7 +257,7 @@ The APKs are signed with the Android Debug key (`CN=Android Debug`). Check with
 2. Tap the gauges icon in the top bar.
 3. Swipe between Dashboard and Extended Dashboard and open categories: the Demo badge marks simulated data; no adapter or car is needed.
 4. Open the gear icon to choose a profile, signal set and adapter.
-5. Add the “Telemetry AA” widget from the launcher and pick up to four parameters.
+5. Add the “Telemetry VAG” widget from the launcher and pick up to four parameters.
 
 ### With an ELM327
 
@@ -274,7 +274,7 @@ bug.
 ### Widget
 
 1. Long-press an empty spot on the launcher and choose **Widgets**.
-2. Find **AA Performance Monitor → Telemetry AA**.
+2. Find **VAG Performance Monitor → Telemetry VAG**.
 3. Pick a title and up to four parameters, then save.
 
 > [!CAUTION]

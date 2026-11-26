@@ -15,5 +15,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AA Performance Monitor"
+rootProject.name = "VAG Performance Monitor"
 include(":app")

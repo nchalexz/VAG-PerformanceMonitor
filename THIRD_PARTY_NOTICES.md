@@ -72,7 +72,7 @@ SOFTWARE.
 
 - `com.github.mik3y:usb-serial-for-android` (MIT) — pulled from JitPack as the base project did.
 
-## AA Performance Monitor (this fork)
+## VAG Performance Monitor (this fork)
 
 - Source: https://github.com/nchalexz/AAPerformanceMonitor
 - Licence: MIT

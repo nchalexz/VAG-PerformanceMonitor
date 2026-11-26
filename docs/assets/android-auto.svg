@@ -8,7 +8,7 @@
 <g stroke="#FFFFFF" stroke-opacity="0.85" fill="none" stroke-width="2.4" transform="translate(1432,26)"><path d="M0 8c4-4 12-4 16 0M3 12c3-3 7-3 10 0"/><circle cx="8" cy="16" r="1.6" fill="#FFFFFF"/></g>
 <rect x="1496" y="24" width="34" height="18" rx="3" fill="none" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="2"/><rect x="1532" y="30" width="3" height="6" fill="#FFFFFF" fill-opacity="0.8"/><rect x="1500" y="28" width="22" height="10" rx="1" fill="#4ADE80"/>
 <g transform="translate(48,104)"><rect x="0" y="0" width="52" height="34" rx="7" fill="none" stroke="#38BDF8" stroke-width="2.6"/><rect x="7" y="10" width="6" height="7" fill="#38BDF8"/><rect x="17" y="10" width="6" height="7" fill="#38BDF8"/><rect x="27" y="10" width="6" height="7" fill="#38BDF8"/><rect x="37" y="10" width="6" height="7" fill="#38BDF8"/><rect x="21" y="34" width="10" height="8" fill="#4ADE80"/></g>
-<text x="124" y="132" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="34" font-weight="600">AA Performance</text>
+<text x="124" y="132" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="34" font-weight="600">VAG Performance</text>
 <text x="124" y="164" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="19">ДЕМО · данные модели</text>
 <line x1="48" y1="196" x2="1552" y2="196" stroke="#22FFFFFF"/>
 <text x="52" y="255" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="25">Состояние</text>
@@ -40,5 +40,5 @@
 <line x1="48" y1="858" x2="1552" y2="858" stroke="#22FFFFFF"/>
 <text x="52" y="888" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="15">Список шаблона Car App Library · до 8 параметров профиля</text>
 <text x="48" y="944" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="15" letter-spacing="1.3">МАКЕТ ЭКРАНА ANDROID AUTO (LISTTEMPLATE) · ДАННЫЕ ДЕМОНСТРАЦИОННЫЕ · НЕ СНИМОК С ГОЛОВНОГО УСТРОЙСТВА</text>
-<text x="1552" y="944" text-anchor="end" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="15" letter-spacing="1.3" opacity="0.8">0.3.0</text>
+<text x="1552" y="944" text-anchor="end" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="15" letter-spacing="1.3" opacity="0.8">0.4.0</text>
 </svg>
