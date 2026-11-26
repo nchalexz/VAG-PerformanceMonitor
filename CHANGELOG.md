@@ -5,6 +5,30 @@
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-11-27
+
+### Изменено
+
+- Приборы перестроены по эталону: тёмный диск 0.44R, значение центрируется
+  по реальным границам глифов и вписывается в диск, единица — на 0.54R,
+  пиктограмма — на 0.73R, название — на 1.15R. Стрелка не пересекает диск.
+- Дуга заполнения между кольцами сохранена по требованию заказчика.
+- Плитки стали компактнее: высота зависит от ширины, а не от свободной
+  высоты; подписи и единицы крупнее, цифры — SemiBold. На 800×480 работает
+  компактная раскладка без обрезания.
+- Убрана янтарная заливка шкалы: осталась красная зона из эталона.
+- Приложение и репозиторий переименованы в **VAG Performance Monitor**;
+  `applicationId` не менялся.
+- Ссылки и релизные заметки переведены на
+  `github.com/nchalexz/VAG-PerformanceMonitor`.
+
+### Исправлено
+
+- Значения больше не выходят за центральный круг и не смещают единицу.
+- Пиктограммы не пересекают границу диска.
+- Устранены обрезание подписей и «прыжки» текста при смене значения.
+
+
 ## [0.4.0] — 2026-11-26
 
 ### Добавлено
@@ -202,7 +226,8 @@ ELM327 проверены на эмуляторе Android 15; виджет ра�
   виджетов Android 35, но не размещён на рабочем столе DashGrid.
 - Нет KWP2000 и TP2.0.
 
-[Unreleased]: https://github.com/nchalexz/AAPerformanceMonitor/commits/main
-[0.4.0]: https://github.com/nchalexz/AAPerformanceMonitor/releases/tag/v0.4.0
-[0.3.0]: https://github.com/nchalexz/AAPerformanceMonitor/releases
-[0.2.0]: https://github.com/nchalexz/AAPerformanceMonitor/releases
+[Unreleased]: https://github.com/nchalexz/VAG-PerformanceMonitor/commits/main
+[0.4.1]: https://github.com/nchalexz/VAG-PerformanceMonitor/releases/tag/v0.4.1
+[0.4.0]: https://github.com/nchalexz/VAG-PerformanceMonitor/releases/tag/v0.4.0
+[0.3.0]: https://github.com/nchalexz/VAG-PerformanceMonitor/releases
+[0.2.0]: https://github.com/nchalexz/VAG-PerformanceMonitor/releases

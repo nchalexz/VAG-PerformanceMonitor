@@ -17,7 +17,7 @@
 ## Контекст
 
 - VPM 0.4.0: `io.github.nchalexz.aaperfmon`.
-  Репозиторий: https://github.com/nchalexz/AAPerformanceMonitor
+  Репозиторий: https://github.com/nchalexz/VAG-PerformanceMonitor
   Тег: `v0.4.0`.
 - В VPM два полноэкранных режима: главный экран (три аналогово-цифровых
   прибора и пять плиток) и расширенный (те же приборы, категории и адаптивная

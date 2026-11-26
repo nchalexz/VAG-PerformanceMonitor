@@ -74,7 +74,7 @@ SOFTWARE.
 
 ## VAG Performance Monitor (this fork)
 
-- Source: https://github.com/nchalexz/AAPerformanceMonitor
+- Source: https://github.com/nchalexz/VAG-PerformanceMonitor
 - Licence: MIT
 - Added for this project: `telemetry/` (catalog, decoders, engine, sources,
   dashboards), `cockpit/` (dashboard and Live Data UI), `core/AdapterHolder.kt`,

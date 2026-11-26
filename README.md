@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nchalexz/AAPerformanceMonitor/releases"><img alt="Version 0.4.0" src="https://img.shields.io/badge/version-0.4.0-E5484D?style=flat-square"></a>
+  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Version 0.4.1" src="https://img.shields.io/badge/version-0.4.1-E5484D?style=flat-square"></a>
   <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/license-MIT-38BDF8?style=flat-square"></a>
   <a href="#install"><img alt="Android 7.0+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white"></a>
   <a href="build.gradle.kts"><img alt="Kotlin 2.2" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?style=flat-square&logo=kotlin&logoColor=white"></a>
@@ -32,17 +32,17 @@
 </p>
 
 > [!WARNING]
-> **0.4.0 is a test build, not a verified release.**
+> **0.4.1 is a test build, not a verified release.**
 > It runs on an Android 15 emulator against a software ELM327 stub, but it has **not been tested in a
 > car**, on a real phone, on an Android Auto head unit or on live Bluetooth/USB adapters. No signal
 > has been confirmed on a vehicle. See [What is tested](#what-is-tested-what-is-not).
 
 > [!NOTE]
-> 0.4.0 contains the new dashboard and the VAG UDS catalog described below. It is still not
+> 0.4.1 contains the dashboard and the VAG UDS catalog described below. It is still not
 > verified in a car, on a head unit or with live adapters.
 
 > [!NOTE]
-> **По-русски.** 0.4.0 — тестовая сборка для телеметрии VAG: 129 сигналов, приборка, виджет и
+> **По-русски.** 0.4.1 — тестовая сборка для телеметрии VAG: 129 сигналов, приборка, виджет и
 > отдельная AA-сборка. Проверено на эмуляторе Android 15 с программной заглушкой ELM327; на
 > реальном автомобиле, телефоне и головном устройстве — нет. Сборки `standard` и `aa` используют
 > один `applicationId`, поэтому ставьте только одну. Полный перевод и подробности —
@@ -217,7 +217,7 @@ The two builds share one `applicationId` and **replace each other** when install
 Requirements: Android 7.0+ (API 24), an ELM327 over Wi-Fi, Bluetooth SPP or USB serial, and network,
 Bluetooth, USB-host and notification permissions. Google Mobile Services are not required.
 
-1. Download the APK you need from [Releases](https://github.com/nchalexz/AAPerformanceMonitor/releases).
+1. Download the APK you need from [Releases](https://github.com/nchalexz/VAG-PerformanceMonitor/releases).
 2. Allow installs from unknown sources when Android asks, then open the file.
 3. The app installs separately from VAG Diag.
 
@@ -225,18 +225,18 @@ Through `adb`:
 
 ```sh
 # standard build
-adb install -r AA-Performance-Monitor-0.4.0-standard.apk
+adb install -r VAG-Performance-Monitor-0.4.1-standard.apk
 
 # Android Auto build
-adb install -r AA-Performance-Monitor-0.4.0-AA.apk
+adb install -r VAG-Performance-Monitor-0.4.1-AA.apk
 ```
 
 <details>
 <summary>SHA-256 and signing certificate</summary>
 
 ```text
-736a21a15b69daeaabc9669fcc8994fbd80f2c5344530d6485182faf8bc7e8c5  AA-Performance-Monitor-0.4.0-standard.apk
-944ce46382255ce8af00c86a07c805db9a38494a24e4eaa6bb5062191f3b015d  AA-Performance-Monitor-0.4.0-AA.apk
+4ba32eacf211ab2df2d02064c26603f61a491f8f99d9713ddef53dda6eb299ae  VAG-Performance-Monitor-0.4.1-standard.apk
+57d00ac3f7453744a9b1b504c9968972e16bc99d232fe8f64376220afd69ecc2  VAG-Performance-Monitor-0.4.1-AA.apk
 certificate SHA-256: c3c91e00cb5a02166d9c4af3702f0f85d4832abe9c7889dd0a057993c10c05df
 ```
 
@@ -446,6 +446,7 @@ release would need a host allowlist. More: [SECURITY.md](SECURITY.md).
 | [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md) | Full dashboard on AARE/DashGrid |
 | [docs/SPEC.md](docs/SPEC.md) | Full technical specification |
 | [CHANGELOG.md](CHANGELOG.md) | Change history |
+| [docs/releases/0.4.1.md](docs/releases/0.4.1.md) | 0.4.1 release notes |
 | [docs/releases/0.4.0.md](docs/releases/0.4.0.md) | 0.4.0 release notes |
 | [docs/releases/0.3.0.md](docs/releases/0.3.0.md) | 0.3.0 release notes |
 | [tools/README.md](tools/README.md) | Regenerating the open VAG signal set |

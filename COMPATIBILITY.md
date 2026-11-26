@@ -8,7 +8,7 @@
 | Параметр | Значение |
 |---|---|
 | `applicationId` | `io.github.nchalexz.aaperfmon` |
-| Версия | 0.4.0 (versionCode 4) |
+| Версия | 0.4.1 (versionCode 5) |
 | Сборки | `standard` (без Android Auto), `aa` (с Car App Library) |
 | Один `applicationId` | да, сборки заменяют друг друга при установке |
 | Минимальная Android | 7.0 (API 24) |

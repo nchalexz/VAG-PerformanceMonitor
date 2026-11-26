@@ -45,6 +45,7 @@ fun DashboardScreen(
             else -> 2
         }
         val portraitPanelHeight = maxWidth * 0.44f
+        val tileRowHeight = ((maxWidth - 6.dp * (columns - 1)) / columns) * 0.48f
         Column(Modifier.fillMaxSize().padding(start = 10.dp, end = 10.dp, top = 4.dp, bottom = 6.dp)) {
             GaugePanel(
                 gauges = MetricRegistry.gauges,
@@ -56,7 +57,7 @@ fun DashboardScreen(
                 modifier = if (portrait) {
                     Modifier.fillMaxWidth().height(portraitPanelHeight)
                 } else {
-                    Modifier.fillMaxWidth().weight(0.62f)
+                    Modifier.fillMaxWidth().weight(1f)
                 },
             )
             Spacer(Modifier.height(8.dp))
@@ -67,12 +68,12 @@ fun DashboardScreen(
                 now = now,
                 canShowData = canShowData,
                 language = language,
-                rowHeight = if (portrait) portraitPanelHeight * 0.82f else null,
-                modifier = if (portrait) {
-                    Modifier.fillMaxWidth()
+                rowHeight = if (portrait) {
+                    portraitPanelHeight * 0.82f
                 } else {
-                    Modifier.fillMaxWidth().weight(0.38f)
+                    tileRowHeight
                 },
+                modifier = Modifier.fillMaxWidth(),
             )
             if (portrait) Spacer(Modifier.weight(1f))
         }

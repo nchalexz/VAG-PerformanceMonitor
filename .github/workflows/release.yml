@@ -45,12 +45,12 @@ jobs:
       - name: Collect APKs
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          if [ -z "$VERSION" ] || [ "$VERSION" = "main" ]; then VERSION="0.3.0-dev"; fi
+          if [ -z "$VERSION" ] || [ "$VERSION" = "main" ]; then VERSION="0.4.1-dev"; fi
           mkdir -p out
           cp app/build/outputs/apk/standard/debug/app-standard-debug.apk \
-             "out/AA-Performance-Monitor-${VERSION}-standard.apk"
+             "out/VAG-Performance-Monitor-${VERSION}-standard.apk"
           cp app/build/outputs/apk/aa/debug/app-aa-debug.apk \
-             "out/AA-Performance-Monitor-${VERSION}-AA.apk"
+             "out/VAG-Performance-Monitor-${VERSION}-AA.apk"
           sha256sum out/*.apk > out/SHA256SUMS.txt
 
       - uses: actions/upload-artifact@v4

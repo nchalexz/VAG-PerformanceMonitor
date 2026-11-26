@@ -9,7 +9,7 @@
 <p align="center"><sub>Полный русский перевод <a href="README.md">английского README</a>.</sub></p>
 
 <p align="center">
-  <a href="https://github.com/nchalexz/AAPerformanceMonitor/releases"><img alt="Версия 0.4.0" src="https://img.shields.io/badge/version-0.4.0-E5484D?style=flat-square"></a>
+  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Версия 0.4.1" src="https://img.shields.io/badge/version-0.4.1-E5484D?style=flat-square"></a>
   <a href="LICENSE"><img alt="Лицензия MIT" src="https://img.shields.io/badge/license-MIT-38BDF8?style=flat-square"></a>
   <a href="COMPATIBILITY.md"><img alt="Android 7.0+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white"></a>
   <a href="build.gradle.kts"><img alt="Kotlin 2.2" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?style=flat-square&logo=kotlin&logoColor=white"></a>
@@ -34,7 +34,7 @@
 </p>
 
 > [!WARNING]
-> **0.4.0 — тестовая сборка, а не готовый продукт.**
+> **0.4.1 — тестовая сборка, а не готовый продукт.**
 > Она проверена на эмуляторе Android 15 с программной заглушкой ELM327, но
 > ещё **не проверялась на автомобиле**, на реальном смартфоне, на головном
 > устройстве Android Auto и на живых адаптерах Bluetooth или USB. Ни один
@@ -42,7 +42,7 @@
 > в разделе [«Что проверено, а что нет»](#что-проверено-а-что-нет).
 
 > [!NOTE]
-> 0.4.0 содержит новый интерфейс и VAG UDS-каталог, описанные ниже. Сборка
+> 0.4.1 содержит интерфейс и VAG UDS-каталог, описанные ниже. Сборка
 > по-прежнему не проверена на автомобиле, головном устройстве и живых адаптерах.
 
 ## Что это
@@ -88,7 +88,7 @@ VAG Performance Monitor — самостоятельное Android-прилож�
 | **Главный экран** | ОЖ, наддув и температура масла в трёх аналогово-цифровых приборах; скорость, обороты, передача, мгновенный расход и остаток топлива в пяти плитках. Открывается по умолчанию. |
 | **Расширенный экран** | Те же три прибора меньше, панель категорий (двигатель, температуры, топливо, КП, турбо, диагностика) и адаптивная сетка: пять колонок на широком экране. Нажатие на прибор открывает его категорию. |
 | **Каталог данных** | Все 129 сигналов: поиск, фильтр по категориям, значение, запрос (PID/DID), блок, протокол и статус проверки. |
-| **Дневная тема** | Та же композиция на отдельных светлых токенах, а не инверсия картинки: [screen-day.png](docs/assets/screen-day.png). |
+| **Дневная тема** | Та же композиция на отдельных светлых токенах, а не инверсия картинки: [screen-day.png](docs/assets/screen-day-ru.png). |
 
 Экраны листаются горизонтальным свайпом. Тема и язык подписей выбираются
 в **Настройках → Приборка**: авто / день / ночь и система / English / русский.
@@ -249,7 +249,7 @@ USB-serial, разрешения на сеть, Bluetooth, USB-хост и ув�
 Google Mobile Services не нужны.
 
 1. Скачайте нужный APK со страницы
-   [Releases](https://github.com/nchalexz/AAPerformanceMonitor/releases).
+   [Releases](https://github.com/nchalexz/VAG-PerformanceMonitor/releases).
 2. Разрешите установку из неизвестных источников и откройте файл.
 3. Приложение установится отдельно от VAG Diag.
 
@@ -257,18 +257,18 @@ Google Mobile Services не нужны.
 
 ```sh
 # обычная сборка
-adb install -r AA-Performance-Monitor-0.4.0-standard.apk
+adb install -r VAG-Performance-Monitor-0.4.1-standard.apk
 
 # сборка с Android Auto
-adb install -r AA-Performance-Monitor-0.4.0-AA.apk
+adb install -r VAG-Performance-Monitor-0.4.1-AA.apk
 ```
 
 <details>
 <summary>Контрольные суммы SHA-256</summary>
 
 ```text
-736a21a15b69daeaabc9669fcc8994fbd80f2c5344530d6485182faf8bc7e8c5  AA-Performance-Monitor-0.4.0-standard.apk
-944ce46382255ce8af00c86a07c805db9a38494a24e4eaa6bb5062191f3b015d  AA-Performance-Monitor-0.4.0-AA.apk
+4ba32eacf211ab2df2d02064c26603f61a491f8f99d9713ddef53dda6eb299ae  VAG-Performance-Monitor-0.4.1-standard.apk
+57d00ac3f7453744a9b1b504c9968972e16bc99d232fe8f64376220afd69ecc2  VAG-Performance-Monitor-0.4.1-AA.apk
 certificate SHA-256: c3c91e00cb5a02166d9c4af3702f0f85d4832abe9c7889dd0a057993c10c05df
 ```
 
@@ -481,6 +481,7 @@ VAG-набор собран из OBDb/Audi-Q3 (CC BY-SA 4.0); у всех ста
 | [`docs/AARE_DASHGRID.md`](docs/AARE_DASHGRID.md) | полноэкранная приборка на AARE |
 | [`docs/SPEC.md`](docs/SPEC.md) | полное техническое задание |
 | [`CHANGELOG.md`](CHANGELOG.md) | история изменений |
+| [`docs/releases/0.4.1.md`](docs/releases/0.4.1.md) | релизные заметки 0.4.1 |
 | [`docs/releases/0.4.0.md`](docs/releases/0.4.0.md) | релизные заметки 0.4.0 |
 | [`docs/releases/0.3.0.md`](docs/releases/0.3.0.md) | релизные заметки 0.3.0 |
 | [`docs/releases/0.2.0.md`](docs/releases/0.2.0.md) | релизные заметки 0.2.0 |
