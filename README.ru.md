@@ -267,9 +267,9 @@ adb install -r AA-Performance-Monitor-0.4.0-AA.apk
 <summary>Контрольные суммы SHA-256</summary>
 
 ```text
-072e127c68b3c418e9cad40030d9f05d8fa6088661f1bf26f553033423ce8816  AA-Performance-Monitor-0.4.0-standard.apk
-c383041c8e6fffe0d97efdb9aec38d429b73d503fc1ffd2e3e7c5c33162c484b  AA-Performance-Monitor-0.4.0-AA.apk
-certificate SHA-256: 36df845b5efe80088341e5ddaf9e69817194871c1318f2638661526c5baff917
+736a21a15b69daeaabc9669fcc8994fbd80f2c5344530d6485182faf8bc7e8c5  AA-Performance-Monitor-0.4.0-standard.apk
+944ce46382255ce8af00c86a07c805db9a38494a24e4eaa6bb5062191f3b015d  AA-Performance-Monitor-0.4.0-AA.apk
+certificate SHA-256: c3c91e00cb5a02166d9c4af3702f0f85d4832abe9c7889dd0a057993c10c05df
 ```
 
 </details>
