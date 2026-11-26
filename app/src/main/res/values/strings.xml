@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">AA Performance Monitor</string>
+    <string name="settings_title">Автомобиль и адаптер</string>
+    <string name="widget_name">Телеметрия AA</string>
+    <string name="widget_description">Компактные показатели двигателя и трансмиссии</string>
+    <string name="widget_config_title">Настройка виджета</string>
 </resources>

@@ -63,7 +63,16 @@ class TelemetryEngine(
     val sourceLabel: String get() = source.label
 
     fun setDashboard(ids: Collection<String>) {
-        dashboardIds = ids.distinct().filter { index[it]?.isComputed == false }
+        // Вычисляемые показатели не опрашиваются, но их входы обязаны
+        // опрашиваться. Иначе наддув, момент и мощность молча висят
+        // без данных, хотя сами сигналы на экране выбраны.
+        val expanded = LinkedHashSet<String>()
+        fun visit(id: String) {
+            if (!expanded.add(id)) return
+            index[id]?.computed?.inputs?.forEach(::visit)
+        }
+        ids.forEach(::visit)
+        dashboardIds = expanded.filter { index[it]?.isComputed == false }
     }
 
     fun setCatalog(ids: Collection<String>) {

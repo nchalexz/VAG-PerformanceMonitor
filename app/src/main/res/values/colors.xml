@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="icon_background">#0F1216</color>
+    <color name="widget_bg">#F4F5F7</color>
+    <color name="widget_text">#101418</color>
+    <color name="widget_dim">#5D6874</color>
+    <color name="widget_accent">#9A5B00</color>
+    <color name="widget_warn">#C02626</color>
+    <color name="widget_ok">#15803D</color>
+    <color name="widget_bar_track">#1F000000</color>
+    <color name="widget_stroke">#1A000000</color>
 </resources>

@@ -1,0 +1,433 @@
+package io.github.nchalexz.aaperfmon.settings
+
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import io.github.nchalexz.aaperfmon.telemetry.ConnectionKind
+import io.github.nchalexz.aaperfmon.telemetry.ReadingState
+import io.github.nchalexz.aaperfmon.telemetry.SignalCatalog
+import io.github.nchalexz.aaperfmon.telemetry.SignalValue
+import io.github.nchalexz.aaperfmon.telemetry.Telemetry
+import io.github.nchalexz.aaperfmon.telemetry.VehicleProfile
+import io.github.nchalexz.aaperfmon.telemetry.VehicleProfiles
+import io.github.nchalexz.aaperfmon.ui.BgColor
+import io.github.nchalexz.aaperfmon.ui.Card
+import io.github.nchalexz.aaperfmon.ui.DarkScheme
+import io.github.nchalexz.aaperfmon.ui.DimColor
+import io.github.nchalexz.aaperfmon.ui.TextColor
+import io.github.nchalexz.aaperfmon.ui.WarnColor
+
+class SettingsActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent { SettingsScreen(onClose = { finish() }) }
+    }
+}
+
+@Composable
+fun SettingsScreen(onClose: () -> Unit, model: SettingsViewModel = viewModel()) {
+    val form by model.form.collectAsState()
+    val message by model.message.collectAsState()
+    val telemetry by Telemetry.state.collectAsState()
+    var pickerOpen by remember { mutableStateOf(false) }
+    LaunchedEffect(telemetry.connection) {
+        if (telemetry.connection == ConnectionKind.CONNECTED) model.clearMessage()
+    }
+
+    MaterialTheme(colorScheme = DarkScheme) {
+        Column(
+            Modifier.fillMaxSize().background(BgColor).safeDrawingPadding()
+                .padding(horizontal = 12.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Автомобиль и адаптер",
+                    color = TextColor,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = onClose) {
+                    Icon(Icons.Filled.Close, "Закрыть", tint = DimColor)
+                }
+            }
+
+            Column(Modifier.verticalScroll(rememberScrollState()).weight(1f)) {
+                StatusCard(telemetry.connection, telemetry.connectionLabel, telemetry.message)
+
+                if (message.isNotBlank()) {
+                    Text(
+                        message,
+                        color = WarnColor,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(vertical = 4.dp),
+                    )
+                }
+
+                Card("Адаптер ELM327") {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("wifi" to "Wi-Fi", "bluetooth" to "Bluetooth", "usb" to "USB")
+                            .forEach { (type, label) ->
+                                FilterChip(
+                                    selected = form.adapterType == type,
+                                    onClick = { model.setAdapterType(type) },
+                                    label = { Text(label, fontSize = 12.sp) },
+                                )
+                            }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    when (form.adapterType) {
+                        "wifi" -> {
+                            OutlinedTextField(
+                                value = form.host,
+                                onValueChange = model::setHost,
+                                label = { Text("Адрес адаптера") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            OutlinedTextField(
+                                value = form.port,
+                                onValueChange = model::setPort,
+                                label = { Text("Порт") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                        "bluetooth", "usb" -> DevicePicker(
+                            form = form,
+                            onRefresh = model::loadDevices,
+                            onSelect = model::selectDevice,
+                        )
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = model::connect) { Text("Подключиться") }
+                        OutlinedButton(onClick = model::useDemo) { Text("Демо") }
+                        OutlinedButton(onClick = model::disconnect) { Text("Стоп") }
+                    }
+                }
+
+                Card("Профиль автомобиля") {
+                    Row(
+                        Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        VehicleProfiles.builtIn.forEach { profile ->
+                            FilterChip(
+                                selected = form.profile.id == profile.id,
+                                onClick = { model.selectBuiltIn(profile.id) },
+                                label = { Text(profile.name, fontSize = 11.sp) },
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = form.profile.name,
+                        onValueChange = model::updateName,
+                        label = { Text("Название") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = form.profile.platform,
+                        onValueChange = model::updatePlatform,
+                        label = { Text("Платформа") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = form.profile.engine,
+                        onValueChange = model::updateEngine,
+                        label = { Text("Двигатель") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = form.profile.transmission,
+                        onValueChange = model::updateTransmission,
+                        label = { Text("Коробка передач") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = form.profile.vin,
+                        onValueChange = model::updateVin,
+                        label = { Text("VIN (необязательно)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Параметров в профиле: ${form.profile.signalIds.size}",
+                            color = DimColor,
+                            fontSize = 12.sp,
+                            modifier = Modifier.weight(1f),
+                        )
+                        OutlinedButton(onClick = { pickerOpen = true }) { Text("Выбрать") }
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Button(onClick = model::saveProfile) { Text("Сохранить профиль") }
+                    TextButton(onClick = model::resetProfile) {
+                        Text("Сбросить на Golf 7.5", color = DimColor, fontSize = 12.sp)
+                    }
+                }
+
+                Card("Сохранённые параметры") {
+                    if (form.profile.signalIds.isEmpty()) {
+                        Text("Профиль пуст — выберите параметры.", color = DimColor, fontSize = 12.sp)
+                    } else {
+                        val now = System.currentTimeMillis()
+                        form.profile.signalIds.sorted().forEach { id ->
+                            SavedValueRow(
+                                id = id,
+                                value = telemetry.values[id],
+                                now = now,
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(24.dp))
+            }
+        }
+    }
+
+    if (pickerOpen) {
+        SignalPickerDialog(
+            initial = form.profile.signalIds,
+            onDismiss = { pickerOpen = false },
+            onConfirm = {
+                model.setSignals(it)
+                pickerOpen = false
+            },
+        )
+    }
+}
+
+@Composable
+private fun StatusCard(connection: ConnectionKind, label: String, message: String) {
+    Card("Состояние") {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.width(8.dp).height(8.dp)
+                    .background(
+                        when (connection) {
+                            ConnectionKind.CONNECTED -> Color(0xFF4ADE80)
+                            ConnectionKind.DEMO -> WarnColor
+                            ConnectionKind.ERROR -> Color(0xFFF87171)
+                            ConnectionKind.CONNECTING -> Color(0xFF38BDF8)
+                            ConnectionKind.DISCONNECTED -> DimColor
+                        },
+                        RoundedCornerShape(4.dp),
+                    ),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(label, color = TextColor, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        }
+        if (message.isNotBlank()) {
+            Text(message, color = DimColor, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+        }
+    }
+}
+
+@Composable
+private fun DevicePicker(
+    form: SettingsForm,
+    onRefresh: () -> Unit,
+    onSelect: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selected = form.devices.firstOrNull { it.id == form.selectedDevice }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.weight(1f)) {
+            OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    selected?.label ?: "Выберите устройство",
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontSize = 12.sp,
+                )
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                if (form.devices.isEmpty()) {
+                    DropdownMenuItem(
+                        text = { Text("Ничего не найдено", fontSize = 12.sp) },
+                        onClick = { expanded = false },
+                    )
+                }
+                form.devices.forEach { device ->
+                    DropdownMenuItem(
+                        text = { Text(device.label, fontSize = 12.sp) },
+                        onClick = {
+                            onSelect(device.id)
+                            expanded = false
+                        },
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.width(6.dp))
+        OutlinedButton(onClick = onRefresh) { Text("Обновить", fontSize = 11.sp) }
+    }
+}
+
+@Composable
+private fun SavedValueRow(id: String, value: SignalValue?, now: Long) {
+    val definition = SignalCatalog.get(id) ?: return
+    val stale = value == null || value.isStale(now, definition)
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(definition.nameRu, color = DimColor, fontSize = 12.sp, modifier = Modifier.weight(1f))
+        Text(
+            when {
+                value == null -> "—"
+                stale && value.state != ReadingState.OK -> "—"
+                stale -> "устарело"
+                else -> "${definition.format(value.value)} ${definition.unit}"
+            },
+            color = if (stale) DimColor else TextColor,
+            fontSize = 12.sp,
+            fontFamily = FontFamily.Monospace,
+        )
+    }
+}
+
+@Composable
+private fun SignalPickerDialog(
+    initial: Set<String>,
+    onDismiss: () -> Unit,
+    onConfirm: (Set<String>) -> Unit,
+) {
+    var selected by remember { mutableStateOf(initial) }
+    var query by remember { mutableStateOf("") }
+    val filtered = SignalCatalog.all.filter {
+        query.isBlank() ||
+            it.nameRu.contains(query, ignoreCase = true) ||
+            it.nameEn.contains(query, ignoreCase = true) ||
+            it.id.contains(query, ignoreCase = true)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Параметры профиля") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = { Text("Поиск", fontSize = 12.sp) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(6.dp))
+                LazyColumn(Modifier.heightIn(max = 380.dp)) {
+                    items(filtered, key = { it.id }) { definition ->
+                        Row(
+                            Modifier.fillMaxWidth().clickable {
+                                selected = if (definition.id in selected) {
+                                    selected - definition.id
+                                } else {
+                                    selected + definition.id
+                                }
+                            }.padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Checkbox(
+                                checked = definition.id in selected,
+                                onCheckedChange = {
+                                    selected = if (definition.id in selected) {
+                                        selected - definition.id
+                                    } else {
+                                        selected + definition.id
+                                    }
+                                },
+                            )
+                            Column {
+                                Text(definition.nameRu, color = TextColor, fontSize = 13.sp)
+                                Text(
+                                    "${definition.id} · ${definition.unit}",
+                                    color = DimColor,
+                                    fontSize = 9.sp,
+                                )
+                            }
+                        }
+                    }
+                }
+                Text(
+                    "Выбрано: ${selected.size}",
+                    color = DimColor,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(selected) }) { Text("Готово") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Отмена") }
+        },
+    )
+}

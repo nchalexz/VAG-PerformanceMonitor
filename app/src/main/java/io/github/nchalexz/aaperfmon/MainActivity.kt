@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.nchalexz.aaperfmon.cockpit.CockpitActivity
+import io.github.nchalexz.aaperfmon.settings.SettingsActivity
 import io.github.nchalexz.aaperfmon.ui.*
 
 class MainActivity : ComponentActivity() {
@@ -32,13 +33,18 @@ class MainActivity : ComponentActivity() {
      * до него — старые вместе с доступом к местоположению: система
      * считает список устройств поблизости сведениями о положении.
      */
-    private val permissions =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-            arrayOf(Manifest.permission.BLUETOOTH_CONNECT,
-                    Manifest.permission.BLUETOOTH_SCAN)
-        else
-            arrayOf(Manifest.permission.BLUETOOTH,
-                    Manifest.permission.BLUETOOTH_ADMIN)
+    private val permissions = buildList {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            add(Manifest.permission.BLUETOOTH_CONNECT)
+            add(Manifest.permission.BLUETOOTH_SCAN)
+        } else {
+            add(Manifest.permission.BLUETOOTH)
+            add(Manifest.permission.BLUETOOTH_ADMIN)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }.toTypedArray()
 
     private val askPermissions =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
@@ -94,7 +100,7 @@ fun AppScreen(onShare: (String) -> Unit) {
                 TopAppBar(
                     title = {
                         Column {
-                            Text("Диагностика VAG", fontSize = 16.sp,
+                            Text("AA Performance Monitor", fontSize = 16.sp,
                                  fontWeight = FontWeight.SemiBold)
                             Text(
                                 if (state.connected)
@@ -108,6 +114,9 @@ fun AppScreen(onShare: (String) -> Unit) {
                         val ctx = LocalContext.current
                         IconButton(onClick = { ctx.startActivity(Intent(ctx, CockpitActivity::class.java)) }) {
                             Icon(Icons.Filled.Speed, "Приборы", tint = DimColor)
+                        }
+                        IconButton(onClick = { ctx.startActivity(Intent(ctx, SettingsActivity::class.java)) }) {
+                            Icon(Icons.Filled.Settings, "Автомобиль и адаптер", tint = DimColor)
                         }
                         IconButton(onClick = { onShare(model.buildReport()) }) {
                             Icon(Icons.Filled.Share, "Отправить отчёт", tint = DimColor)

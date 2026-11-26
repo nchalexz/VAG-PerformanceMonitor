@@ -10,6 +10,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,6 +29,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.Air
 import androidx.compose.material.icons.rounded.OilBarrel
 import androidx.compose.material.icons.rounded.Thermostat
@@ -68,6 +70,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.nchalexz.aaperfmon.R
+import io.github.nchalexz.aaperfmon.settings.SettingsActivity
 import io.github.nchalexz.aaperfmon.telemetry.DashboardSpec
 import io.github.nchalexz.aaperfmon.telemetry.SignalCatalog
 import io.github.nchalexz.aaperfmon.telemetry.SignalCategory
@@ -136,7 +139,9 @@ fun CockpitRoot(model: CockpitViewModel = viewModel()) {
         ) {
             Header(
                 state = state,
-                onAdapter = model::useAdapter,
+                onSettings = {
+                    context.startActivity(android.content.Intent(context, SettingsActivity::class.java))
+                },
                 onDemo = model::useDemo,
                 closeScreen = { (context as? android.app.Activity)?.finish() },
             )
@@ -170,7 +175,7 @@ fun CockpitRoot(model: CockpitViewModel = viewModel()) {
 @Composable
 private fun Header(
     state: CockpitUiState,
-    onAdapter: () -> Unit,
+    onSettings: () -> Unit,
     onDemo: () -> Unit,
     closeScreen: () -> Unit,
 ) {
@@ -185,15 +190,13 @@ private fun Header(
         Spacer(Modifier.width(10.dp))
         SourceBadge(state)
         Spacer(Modifier.weight(1f))
-        if (state.adapterAvailable && state.demo) {
-            TextButton(onClick = onAdapter) {
-                Text("ELM327", color = Blue, fontSize = 12.sp, fontFamily = CockpitFont)
-            }
-        }
-        if (!state.demo) {
+        if (state.live) {
             TextButton(onClick = onDemo) {
                 Text("Демо", color = Dim, fontSize = 12.sp, fontFamily = CockpitFont)
             }
+        }
+        IconButton(onClick = onSettings) {
+            Icon(Icons.Filled.Settings, "Настройки и автомобиль", tint = Dim)
         }
         IconButton(onClick = closeScreen) {
             Icon(Icons.Filled.Close, "Закрыть", tint = Dim)
@@ -203,8 +206,13 @@ private fun Header(
 
 @Composable
 private fun SourceBadge(state: CockpitUiState) {
-    val color = if (state.demo) Amber else Green
-    val label = if (state.demo) "ДЕМО" else "ELM327"
+    val color = when {
+        state.error.isNotBlank() -> Red
+        state.live -> Green
+        state.demo -> Amber
+        else -> Dim
+    }
+    val label = state.sourceLabel
     Row(
         Modifier.clip(RoundedCornerShape(4.dp)).background(color.copy(alpha = 0.12f))
             .border(1.dp, color.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
@@ -234,7 +242,7 @@ private fun ScreenTabs(current: CockpitScreen, onSelect: (CockpitScreen) -> Unit
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
         labels.forEach { (screen, label) ->
             val selected = screen == current
-            Column(Modifier.padding(vertical = 2.dp)) {
+            Column(Modifier.padding(vertical = 2.dp).width(IntrinsicSize.Max)) {
                 Text(
                     label,
                     color = if (selected) Ink else Dim,
@@ -260,22 +268,53 @@ private fun ScreenTabs(current: CockpitScreen, onSelect: (CockpitScreen) -> Unit
 private fun DashboardView(spec: DashboardSpec, state: CockpitUiState, modifier: Modifier) {
     val dials = spec.widgets.filter { it.kind == WidgetKind.DIAL }
     val tiles = spec.widgets.filter { it.kind == WidgetKind.TILE }
-    Column(modifier) {
-        Row(
-            Modifier.fillMaxWidth().weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            dials.forEach { widget ->
-                DialWidget(widget, state, Modifier.weight(1f).fillMaxHeight())
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        Row(
-            Modifier.fillMaxWidth().height(96.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            tiles.forEach { widget ->
-                TileWidget(widget, state, Modifier.weight(1f).fillMaxHeight())
+    BoxWithConstraints(modifier) {
+        val width = maxWidth
+        val portrait = width < maxHeight
+        Column(Modifier.fillMaxSize()) {
+            if (portrait) {
+                Row(
+                    Modifier.fillMaxWidth().height(width * 0.44f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    dials.forEach { widget ->
+                        DialWidget(widget, state, Modifier.weight(1f).fillMaxHeight())
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Column(Modifier.fillMaxWidth().weight(1f)) {
+                    tiles.chunked(3).forEachIndexed { index, row ->
+                        Row(
+                            Modifier.fillMaxWidth().height(104.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            row.forEach { widget ->
+                                TileWidget(widget, state, Modifier.weight(1f).fillMaxHeight())
+                            }
+                        }
+                        if (index < tiles.chunked(3).lastIndex) Spacer(Modifier.height(6.dp))
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    PerformancePanel(state, Modifier.fillMaxWidth().weight(1f))
+                }
+            } else {
+                Row(
+                    Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    dials.forEach { widget ->
+                        DialWidget(widget, state, Modifier.weight(1f).fillMaxHeight())
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    Modifier.fillMaxWidth().height(96.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    tiles.forEach { widget ->
+                        TileWidget(widget, state, Modifier.weight(1f).fillMaxHeight())
+                    }
+                }
             }
         }
     }
@@ -322,9 +361,13 @@ private fun DialWidget(widget: WidgetSpec, state: CockpitUiState, modifier: Modi
         SignalCatalog.Ids.BOOST, SignalCatalog.Ids.LOAD -> Icons.Rounded.Air
         else -> Icons.Rounded.OilBarrel
     }
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
         BoxWithConstraints(
-            Modifier.weight(1f).fillMaxWidth(),
+            Modifier.fillMaxWidth().aspectRatio(1f),
             contentAlignment = Alignment.Center,
         ) {
             val side = minOf(maxWidth, maxHeight)
@@ -483,6 +526,70 @@ private fun TileWidget(widget: WidgetSpec, state: CockpitUiState, modifier: Modi
                     maxLines = 1,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PerformancePanel(state: CockpitUiState, modifier: Modifier) {
+    val ids = listOf(
+        SignalCatalog.Ids.POWER_KW,
+        SignalCatalog.Ids.TORQUE_NM,
+        SignalCatalog.Ids.LOAD,
+        SignalCatalog.Ids.VOLTAGE,
+    )
+    val now = state.now
+    Column(modifier) {
+        Text(
+            "ДИНАМИКА",
+            color = Dim,
+            fontSize = 10.sp,
+            letterSpacing = 1.2.sp,
+            fontFamily = CockpitFont,
+            modifier = Modifier.padding(bottom = 6.dp),
+        )
+        ids.forEach { id ->
+            val definition = SignalCatalog.get(id) ?: return@forEach
+            val value = state.values[id]
+            val stale = value == null || value.isStale(now, definition)
+            val number = if (stale) null else value?.value
+            val fraction = if (number == null) 0f else {
+                val min = definition.minValue ?: 0.0
+                val max = definition.maxValue ?: 1.0
+                ((number - min) / (max - min)).coerceIn(0.0, 1.0).toFloat()
+            }
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    definition.nameRu,
+                    color = Dim,
+                    fontSize = 11.sp,
+                    fontFamily = CockpitFont,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    if (number == null) "—" else "${definition.format(number)} ${definition.unit}",
+                    color = if (number == null) Dim else Ink,
+                    fontSize = 13.sp,
+                    fontFamily = CockpitFont,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            Box(
+                Modifier.fillMaxWidth().height(3.dp)
+                    .background(Color(0x1FFFFFFF), RoundedCornerShape(2.dp)),
+            ) {
+                Box(
+                    Modifier.fillMaxWidth(fraction).height(3.dp)
+                        .background(if (fraction > 0.8f) Red else Ink.copy(alpha = 0.65f),
+                            RoundedCornerShape(2.dp)),
+                )
+            }
+            Spacer(Modifier.height(8.dp))
         }
     }
 }

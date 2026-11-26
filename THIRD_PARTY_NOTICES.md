@@ -44,6 +44,13 @@ SOFTWARE.
 - Source: https://developer.android.com/jetpack/androidx
 - Licence: Apache License 2.0 (see the dependency metadata).
 
+## AndroidX Car App Library
+
+- Source: https://developer.android.com/training/cars/apps
+- Licence: Apache License 2.0.
+- Used only by the `aa` product flavor (`androidx.car.app:app` and
+  `app-projected`, version 1.7.0). The `standard` build does not include it.
+
 ## USB-serial drivers
 
 - `com.github.mik3y:usb-serial-for-android` (MIT) — pulled from JitPack as the base project did.
@@ -59,3 +66,10 @@ SOFTWARE.
   a real car and must not be treated as compatibility evidence.
 - The visual dashboard follows the MIB/Porsche cluster style described in the
   specification; the implementation is original code, not copied assets.
+
+## AndroidX Car App Library (AA flavor only)
+
+- Source: https://developer.android.com/jetpack/androidx/releases/car-app
+- Version: 1.7.0 (`androidx.car.app:app`, `androidx.car.app:app-projected`)
+- Licence: Apache License 2.0
+- Used only in the `aa` product flavor; the `standard` APK does not include it.

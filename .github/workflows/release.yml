@@ -1,0 +1,73 @@
+name: Release APKs
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 36
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build standard and AA debug APKs
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:assembleStandardDebug :app:assembleAaDebug --no-daemon
+
+      - name: Collect APKs
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [ -z "$VERSION" ] || [ "$VERSION" = "main" ]; then VERSION="0.3.0-dev"; fi
+          mkdir -p out
+          cp app/build/outputs/apk/standard/debug/app-standard-debug.apk \
+             "out/AA-Performance-Monitor-${VERSION}-standard.apk"
+          cp app/build/outputs/apk/aa/debug/app-aa-debug.apk \
+             "out/AA-Performance-Monitor-${VERSION}-AA.apk"
+          sha256sum out/*.apk > out/SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apks
+          path: out/*
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*
+          generate_release_notes: true
+          body: |
+            ## Сборки
+
+            - `...-standard.apk` — без Android Auto: приборка, виджет, профили
+              автомобилей и подключение ELM327.
+            - `...-AA.apk` — то же плюс `CarAppService` для Android Auto
+              (шаблонный экран Car App Library). Полноэкранная приборка в
+              штатном Android Auto недоступна: там нет произвольного Canvas.
+              Для полноэкранного режима используйте AARE/DashGrid.
+
+            APK собраны как debug и подписаны debug-ключом CI. Установите один
+            из двух: у сборок одинаковый `applicationId`. Если ключ предыдущей
+            установки отличался, сначала удалите старое приложение.
+
+            Подробности: `docs/AA.md`, `docs/WIDGET.md`, `docs/AARE_DASHGRID.md`.

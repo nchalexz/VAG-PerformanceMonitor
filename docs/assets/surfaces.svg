@@ -1,0 +1,194 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-label="Три поверхности: приборка, виджет, Android Auto">
+<rect width="1200" height="620" fill="#080A0C"/>
+<rect x="0.5" y="0.5" width="1199" height="619" rx="18" fill="none" stroke="#FFFFFF" stroke-opacity="0.10"/>
+<text x="40" y="52" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="11" letter-spacing="2.6">ОДНА ТЕЛЕМЕТРИЯ · ОДНО СОЕДИНЕНИЕ</text>
+<text x="40" y="84" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="26" font-weight="600">Три поверхности, одни и те же данные</text>
+<rect x="40" y="118" width="348" height="430" rx="12" fill="#0B0E11" stroke="#FFFFFF" stroke-opacity="0.09"/>
+<text x="60" y="148" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10" letter-spacing="1.6">01 · ПОЛНОЭКРАННАЯ ПРИБОРКА</text>
+<rect x="424" y="118" width="348" height="430" rx="12" fill="#0B0E11" stroke="#FFFFFF" stroke-opacity="0.09"/>
+<text x="444" y="148" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10" letter-spacing="1.6">02 · ВИДЖЕТ НА РАБОЧЕМ СТОЛЕ</text>
+<rect x="808" y="118" width="352" height="430" rx="12" fill="#0B0E11" stroke="#FFFFFF" stroke-opacity="0.09"/>
+<text x="828" y="148" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10" letter-spacing="1.6">03 · ANDROID AUTO · ШАБЛОН</text>
+<rect x="88" y="160" width="252" height="360" rx="16" fill="#080A0C" stroke="#FFFFFF" stroke-opacity="0.16"/>
+<text x="104" y="190" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="13" font-weight="600">VAG Cockpit</text>
+<rect x="208" y="177" width="46" height="18" rx="3" fill="#F5B33C" fill-opacity="0.12" stroke="#F5B33C" stroke-opacity="0.5"/>
+<text x="231" y="190" text-anchor="middle" fill="#F5B33C" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="8" letter-spacing="1.0">ДЕМО</text>
+<text x="104" y="216" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="9" font-weight="600">Движение</text>
+<rect x="104" y="222" width="46" height="1.5" fill="#E5484D"/>
+<text x="178" y="216" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="9" font-weight="400">Динамика</text>
+<text x="252" y="216" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="9" font-weight="400">Данные</text>
+<line x1="102" y1="232" x2="326" y2="232" stroke="#FFFFFF" stroke-opacity="0.08"/>
+<circle cx="146" cy="300" r="32" fill="none" stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="0.64"/>
+<line x1="127.9" y1="318.1" x2="124.96" y2="321.04" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="123.74" y1="316.18" x2="121.92" y2="317.49" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="121.48" y1="312.49" x2="119.48" y2="313.51" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="119.83" y1="308.5" x2="117.7" y2="309.2" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="118.82" y1="304.31" x2="116.61" y2="304.66" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="120.4" y1="300" x2="116.24" y2="300" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="118.82" y1="295.69" x2="116.61" y2="295.34" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="119.83" y1="291.5" x2="117.7" y2="290.8" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="121.48" y1="287.51" x2="119.48" y2="286.49" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="123.74" y1="283.82" x2="121.92" y2="282.51" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="127.9" y1="281.9" x2="124.96" y2="278.96" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="129.82" y1="277.74" x2="128.51" y2="275.92" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="133.51" y1="275.48" x2="132.49" y2="273.48" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="137.5" y1="273.83" x2="136.8" y2="271.7" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="141.69" y1="272.82" x2="141.34" y2="270.61" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="146" y1="274.4" x2="146" y2="270.24" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="150.31" y1="272.82" x2="150.66" y2="270.61" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="154.5" y1="273.83" x2="155.2" y2="271.7" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="158.49" y1="275.48" x2="159.51" y2="273.48" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="162.18" y1="277.74" x2="163.49" y2="275.92" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="164.1" y1="281.9" x2="167.04" y2="278.96" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="168.26" y1="283.82" x2="170.08" y2="282.51" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="170.52" y1="287.51" x2="172.52" y2="286.49" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="172.17" y1="291.5" x2="174.3" y2="290.8" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="173.18" y1="295.69" x2="175.39" y2="295.34" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="171.6" y1="300" x2="175.76" y2="300" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="173.18" y1="304.31" x2="175.39" y2="304.66" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="172.17" y1="308.5" x2="174.3" y2="309.2" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="170.52" y1="312.49" x2="172.52" y2="313.51" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="168.26" y1="316.18" x2="170.08" y2="317.49" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="164.1" y1="318.1" x2="167.04" y2="321.04" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<path d="M 176.13 305.99 A 30.72 30.72 0 0 1 167.72 321.72" fill="none" stroke="#E5484D" stroke-opacity="0.75" stroke-width="1.12"/>
+<path d="M 124.28 321.72 A 30.72 30.72 0 0 1 163.07 274.46" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1.28" stroke-linecap="round"/>
+<line x1="146" y1="300" x2="160.22" y2="278.71" stroke="#FFFFFF" stroke-width="1.44" stroke-linecap="round"/>
+<circle cx="146" cy="300" r="1.44" fill="#FFFFFF"/>
+<text x="146" y="303.2" text-anchor="middle" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="17.6" font-weight="600">90</text>
+<text x="146" y="313.44" text-anchor="middle" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="6.08">°C</text>
+<text x="146" y="341.6" text-anchor="middle" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="5.44" letter-spacing="0.6"></text>
+<circle cx="214" cy="300" r="32" fill="none" stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="0.64"/>
+<line x1="195.9" y1="318.1" x2="192.96" y2="321.04" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="191.74" y1="316.18" x2="189.92" y2="317.49" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="189.48" y1="312.49" x2="187.48" y2="313.51" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="187.83" y1="308.5" x2="185.7" y2="309.2" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="186.82" y1="304.31" x2="184.61" y2="304.66" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="188.4" y1="300" x2="184.24" y2="300" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="186.82" y1="295.69" x2="184.61" y2="295.34" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="187.83" y1="291.5" x2="185.7" y2="290.8" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="189.48" y1="287.51" x2="187.48" y2="286.49" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="191.74" y1="283.82" x2="189.92" y2="282.51" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="195.9" y1="281.9" x2="192.96" y2="278.96" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="197.82" y1="277.74" x2="196.51" y2="275.92" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="201.51" y1="275.48" x2="200.49" y2="273.48" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="205.5" y1="273.83" x2="204.8" y2="271.7" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="209.69" y1="272.82" x2="209.34" y2="270.61" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="214" y1="274.4" x2="214" y2="270.24" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="218.31" y1="272.82" x2="218.66" y2="270.61" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="222.5" y1="273.83" x2="223.2" y2="271.7" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="226.49" y1="275.48" x2="227.51" y2="273.48" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="230.18" y1="277.74" x2="231.49" y2="275.92" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="232.1" y1="281.9" x2="235.04" y2="278.96" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="236.26" y1="283.82" x2="238.08" y2="282.51" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="238.52" y1="287.51" x2="240.52" y2="286.49" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="240.17" y1="291.5" x2="242.3" y2="290.8" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="241.18" y1="295.69" x2="243.39" y2="295.34" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="239.6" y1="300" x2="243.76" y2="300" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="241.18" y1="304.31" x2="243.39" y2="304.66" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="240.17" y1="308.5" x2="242.3" y2="309.2" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="238.52" y1="312.49" x2="240.52" y2="313.51" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="236.26" y1="316.18" x2="238.08" y2="317.49" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="232.1" y1="318.1" x2="235.04" y2="321.04" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<path d="M 244.53 303.44 A 30.72 30.72 0 0 1 235.72 321.72" fill="none" stroke="#E5484D" stroke-opacity="0.75" stroke-width="1.12"/>
+<path d="M 192.28 321.72 A 30.72 30.72 0 0 1 207.84 269.9" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1.28" stroke-linecap="round"/>
+<line x1="214" y1="300" x2="208.86" y2="274.92" stroke="#FFFFFF" stroke-width="1.44" stroke-linecap="round"/>
+<circle cx="214" cy="300" r="1.44" fill="#FFFFFF"/>
+<text x="214" y="303.2" text-anchor="middle" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="17.6" font-weight="600">60</text>
+<text x="214" y="313.44" text-anchor="middle" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="6.08">кПа</text>
+<text x="214" y="341.6" text-anchor="middle" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="5.44" letter-spacing="0.6"></text>
+<circle cx="282" cy="300" r="32" fill="none" stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="0.64"/>
+<line x1="263.9" y1="318.1" x2="260.96" y2="321.04" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="259.74" y1="316.18" x2="257.92" y2="317.49" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="257.48" y1="312.49" x2="255.48" y2="313.51" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="255.83" y1="308.5" x2="253.7" y2="309.2" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="254.82" y1="304.31" x2="252.61" y2="304.66" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="256.4" y1="300" x2="252.24" y2="300" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="254.82" y1="295.69" x2="252.61" y2="295.34" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="255.83" y1="291.5" x2="253.7" y2="290.8" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="257.48" y1="287.51" x2="255.48" y2="286.49" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="259.74" y1="283.82" x2="257.92" y2="282.51" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="263.9" y1="281.9" x2="260.96" y2="278.96" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="265.82" y1="277.74" x2="264.51" y2="275.92" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="269.51" y1="275.48" x2="268.49" y2="273.48" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="273.5" y1="273.83" x2="272.8" y2="271.7" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="277.69" y1="272.82" x2="277.34" y2="270.61" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="282" y1="274.4" x2="282" y2="270.24" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="286.31" y1="272.82" x2="286.66" y2="270.61" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="290.5" y1="273.83" x2="291.2" y2="271.7" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="294.49" y1="275.48" x2="295.51" y2="273.48" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="298.18" y1="277.74" x2="299.49" y2="275.92" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="300.1" y1="281.9" x2="303.04" y2="278.96" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="304.26" y1="283.82" x2="306.08" y2="282.51" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="306.52" y1="287.51" x2="308.52" y2="286.49" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="308.17" y1="291.5" x2="310.3" y2="290.8" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="309.18" y1="295.69" x2="311.39" y2="295.34" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="307.6" y1="300" x2="311.76" y2="300" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<line x1="309.18" y1="304.31" x2="311.39" y2="304.66" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="308.17" y1="308.5" x2="310.3" y2="309.2" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="306.52" y1="312.49" x2="308.52" y2="313.51" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="304.26" y1="316.18" x2="306.08" y2="317.49" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.32"/>
+<line x1="300.1" y1="318.1" x2="303.04" y2="321.04" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.7"/>
+<path d="M 312.72 300 A 30.72 30.72 0 0 1 303.72 321.72" fill="none" stroke="#E5484D" stroke-opacity="0.75" stroke-width="1.12"/>
+<path d="M 260.28 321.72 A 30.72 30.72 0 0 1 277.19 269.66" fill="none" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="1.28" stroke-linecap="round"/>
+<line x1="282" y1="300" x2="278" y2="274.72" stroke="#FFFFFF" stroke-width="1.44" stroke-linecap="round"/>
+<circle cx="282" cy="300" r="1.44" fill="#FFFFFF"/>
+<text x="282" y="303.2" text-anchor="middle" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="17.6" font-weight="600">96</text>
+<text x="282" y="313.44" text-anchor="middle" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="6.08">°C</text>
+<text x="282" y="341.6" text-anchor="middle" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="5.44" letter-spacing="0.6"></text>
+<rect x="102" y="385" width="106" height="62" rx="6" fill="#0E1216" stroke="#FFFFFF" stroke-opacity="0.10"/>
+<text x="155.0" y="403" text-anchor="middle" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="7.5" letter-spacing="0.7">СКОРОСТЬ</text>
+<text x="155.0" y="430" text-anchor="middle" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="21" font-weight="600">84</text>
+<text x="155.0" y="441" text-anchor="middle" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="7">км/ч</text>
+<rect x="220" y="385" width="106" height="62" rx="6" fill="#0E1216" stroke="#FFFFFF" stroke-opacity="0.10"/>
+<text x="273.0" y="403" text-anchor="middle" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="7.5" letter-spacing="0.7">ОБОРОТЫ</text>
+<text x="273.0" y="430" text-anchor="middle" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="21" font-weight="600">1750</text>
+<text x="273.0" y="441" text-anchor="middle" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="7">об/мин</text>
+<text x="104" y="482" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="8">3 колодца · 5 плиток</text>
+<rect x="104" y="492" width="90" height="3" rx="1.5" fill="#FFFFFF" fill-opacity="0.12"/>
+<rect x="104" y="492" width="54" height="3" rx="1.5" fill="#38BDF8"/>
+<rect x="464" y="206" width="284" height="196" rx="20" fill="#000" fill-opacity="0.35"/>
+<rect x="456" y="196" width="284" height="196" rx="20" fill="#F4F5F7" stroke="#000" stroke-opacity="0.12"/>
+<text x="474" y="226" fill="#101418" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="12" font-weight="600">VW Golf 7.5 Alltrack</text>
+<text x="722" y="226" text-anchor="end" fill="#9A5B00" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="8" letter-spacing="0.8">ДЕМО</text>
+<text x="474" y="252" fill="#5D6874" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="7.5" letter-spacing="0.8">ОЖ</text>
+<text x="474" y="275" fill="#101418" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="22" font-weight="600">90</text>
+<text x="503" y="275" fill="#5D6874" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="8">°C</text>
+<rect x="474" y="283" width="108" height="3" rx="1.5" fill="#000" fill-opacity="0.10"/>
+<rect x="474" y="283" width="66.96" height="3" rx="1.5" fill="#15803D"/>
+<text x="602" y="252" fill="#5D6874" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="7.5" letter-spacing="0.8">НАДДУВ</text>
+<text x="602" y="275" fill="#101418" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="22" font-weight="600">60</text>
+<text x="631" y="275" fill="#5D6874" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="8">кПа</text>
+<rect x="602" y="283" width="108" height="3" rx="1.5" fill="#000" fill-opacity="0.10"/>
+<rect x="602" y="283" width="49.68" height="3" rx="1.5" fill="#15803D"/>
+<text x="474" y="318" fill="#5D6874" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="7.5" letter-spacing="0.8">МАСЛО</text>
+<text x="474" y="341" fill="#101418" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="22" font-weight="600">96</text>
+<text x="503" y="341" fill="#5D6874" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="8">°C</text>
+<rect x="474" y="349" width="108" height="3" rx="1.5" fill="#000" fill-opacity="0.10"/>
+<rect x="474" y="349" width="50.76" height="3" rx="1.5" fill="#15803D"/>
+<text x="602" y="318" fill="#5D6874" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="7.5" letter-spacing="0.8">СКОРОСТЬ</text>
+<text x="602" y="341" fill="#101418" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="22" font-weight="600">84</text>
+<text x="631" y="341" fill="#5D6874" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="8">км/ч</text>
+<rect x="602" y="349" width="108" height="3" rx="1.5" fill="#000" fill-opacity="0.10"/>
+<rect x="602" y="349" width="57.24" height="3" rx="1.5" fill="#15803D"/>
+<rect x="840" y="178" width="288" height="236" rx="14" fill="#10161C" stroke="#FFFFFF" stroke-opacity="0.14"/>
+<text x="860" y="212" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="600">AA Performance</text>
+<circle cx="1104" cy="207" r="7" fill="none" stroke="#98A1AB" stroke-opacity="0.6"/>
+<text x="860" y="236" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10.5">Состояние</text>
+<text x="1108" y="236" text-anchor="end" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10.5">ДЕМО · данные модели</text>
+<line x1="858" y1="256" x2="1110" y2="256" stroke="#FFFFFF" stroke-opacity="0.07"/>
+<text x="860" y="270" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10.5">Температура ОЖ</text>
+<text x="1108" y="270" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10.5">90 °C</text>
+<line x1="858" y1="290" x2="1110" y2="290" stroke="#FFFFFF" stroke-opacity="0.07"/>
+<text x="860" y="304" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10.5">Наддув</text>
+<text x="1108" y="304" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10.5">60 кПа</text>
+<line x1="858" y1="324" x2="1110" y2="324" stroke="#FFFFFF" stroke-opacity="0.07"/>
+<text x="860" y="338" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10.5">Температура масла</text>
+<text x="1108" y="338" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10.5">96 °C</text>
+<line x1="858" y1="358" x2="1110" y2="358" stroke="#FFFFFF" stroke-opacity="0.07"/>
+<text x="860" y="372" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10.5">Скорость</text>
+<text x="1108" y="372" text-anchor="end" fill="#FFFFFF" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10.5">84 км/ч</text>
+<text x="474" y="505" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="9" letter-spacing="0.6">2×2 или компактный · до 4 параметров</text>
+<text x="860" y="505" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="9" letter-spacing="0.6">Шаблонный список · без произвольного Canvas</text>
+<text x="40" y="580" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10" letter-spacing="1.1" opacity="0.8">МАКЕТЫ ИНТЕРФЕЙСА · ДАННЫЕ ДЕМОНСТРАЦИОННЫЕ · НЕ СКРИНШОТЫ С УСТРОЙСТВ</text>
+<text x="1160" y="580" text-anchor="end" fill="#98A1AB" font-family="'Titillium Web','Inter','Helvetica Neue',Arial,sans-serif" font-size="10" letter-spacing="1.1" opacity="0.8">0.3.0</text>
+</svg>

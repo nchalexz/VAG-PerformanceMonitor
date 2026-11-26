@@ -13,8 +13,8 @@ android {
         applicationId = "io.github.nchalexz.aaperfmon"
         minSdk = 24                 // Android 7, охватывает почти все живые телефоны
         targetSdk = 36              // требование Google Play с 31.08.2026
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.3.0"
     }
 
     // Подпись включается ТОЛЬКО когда задана переменная окружения
@@ -58,8 +58,21 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    flavorDimensions += "car"
+    productFlavors {
+        // Один и тот же applicationId: это одна программа в двух сборках.
+        // Пользователь ставит либо обычную, либо с Android Auto.
+        create("standard") {
+            dimension = "car"
+        }
+        create("aa") {
+            dimension = "car"
+        }
+    }
+
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     testOptions {
@@ -85,6 +98,11 @@ dependencies {
     // Драйверы CH340, FTDI, CP210x, PL2303 — микросхемы, которые стоят
     // внутри USB-адаптеров ELM327. Единственная внешняя зависимость.
     implementation("com.github.mik3y:usb-serial-for-android:3.11.0")
+
+    // Android Auto (Car App Library) только в AA-сборке. Обычная сборка
+    // не тянет автомобильные зависимости и не объявляет CarAppService.
+    "aaImplementation"("androidx.car.app:app:1.7.0")
+    "aaImplementation"("androidx.car.app:app-projected:1.7.0")
 
     // Тесты каталога и движка телеметрии — обычные JVM-тесты: ни эмулятор,
     // ни автомобиль для них не нужны.

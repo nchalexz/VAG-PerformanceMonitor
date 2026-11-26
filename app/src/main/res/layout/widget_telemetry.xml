@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_bg"
+    android:padding="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Телеметрия"
+            android:textColor="@color/widget_text"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif-condensed"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ДЕМО"
+            android:textColor="@color/widget_accent"
+            android:textSize="9sp"
+            android:letterSpacing="0.08"
+            android:fontFamily="sans-serif-condensed" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="4dp">
+
+            <TextView android:id="@+id/slot1_label"
+            android:text="Наддув" style="@style/WidgetSlotLabel" />
+            <TextView android:id="@+id/slot1_value"
+            android:text="—" style="@style/WidgetSlotValue" />
+            <TextView android:id="@+id/slot1_unit"
+            android:text="кПа" style="@style/WidgetSlotUnit" />
+            <ProgressBar android:id="@+id/slot1_bar" style="@style/WidgetSlotBar" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="4dp">
+
+            <TextView android:id="@+id/slot2_label"
+            android:text="Мощность" style="@style/WidgetSlotLabel" />
+            <TextView android:id="@+id/slot2_value"
+            android:text="—" style="@style/WidgetSlotValue" />
+            <TextView android:id="@+id/slot2_unit"
+            android:text="кВт" style="@style/WidgetSlotUnit" />
+            <ProgressBar android:id="@+id/slot2_bar" style="@style/WidgetSlotBar" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="4dp">
+
+            <TextView android:id="@+id/slot3_label"
+            android:text="Момент" style="@style/WidgetSlotLabel" />
+            <TextView android:id="@+id/slot3_value"
+            android:text="—" style="@style/WidgetSlotValue" />
+            <TextView android:id="@+id/slot3_unit"
+            android:text="Н·м" style="@style/WidgetSlotUnit" />
+            <ProgressBar android:id="@+id/slot3_bar" style="@style/WidgetSlotBar" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="4dp">
+
+            <TextView android:id="@+id/slot4_label"
+            android:text="ОЖ" style="@style/WidgetSlotLabel" />
+            <TextView android:id="@+id/slot4_value"
+            android:text="—" style="@style/WidgetSlotValue" />
+            <TextView android:id="@+id/slot4_unit"
+            android:text="°C" style="@style/WidgetSlotUnit" />
+            <ProgressBar android:id="@+id/slot4_bar" style="@style/WidgetSlotBar" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
