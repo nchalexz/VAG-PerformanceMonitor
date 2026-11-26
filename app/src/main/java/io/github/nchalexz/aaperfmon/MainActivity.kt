@@ -20,10 +20,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.nchalexz.aaperfmon.cockpit.CockpitActivity
 import io.github.nchalexz.aaperfmon.settings.SettingsActivity
+import io.github.nchalexz.aaperfmon.telemetry.Telemetry
 import io.github.nchalexz.aaperfmon.ui.*
 
 class MainActivity : ComponentActivity() {
@@ -55,6 +57,8 @@ class MainActivity : ComponentActivity() {
         // сам делает отступы, и содержимое не уезжает под вырез.
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        Telemetry.init(applicationContext)
+        Telemetry.autoConnectOnce()
         askPermissions.launch(permissions)
 
         setContent {
@@ -100,7 +104,7 @@ fun AppScreen(onShare: (String) -> Unit) {
                 TopAppBar(
                     title = {
                         Column {
-                            Text("AA Performance Monitor", fontSize = 16.sp,
+                            Text(stringResource(R.string.app_name), fontSize = 16.sp,
                                  fontWeight = FontWeight.SemiBold)
                             Text(
                                 if (state.connected)

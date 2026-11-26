@@ -50,6 +50,7 @@ class CockpitViewModel(application: Application) : AndroidViewModel(application)
 
     init {
         Telemetry.init(application)
+        Telemetry.autoConnectOnce()
         CockpitPrefs.init(application)
         category = DisplayCategory.byId(CockpitPrefs.state.value.categoryId)
         subscribe()

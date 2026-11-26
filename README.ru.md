@@ -9,7 +9,7 @@
 <p align="center"><sub>Полный русский перевод <a href="README.md">английского README</a>.</sub></p>
 
 <p align="center">
-  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Версия 0.4.1" src="https://img.shields.io/badge/version-0.4.1-E5484D?style=flat-square"></a>
+  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Версия 0.5.0" src="https://img.shields.io/badge/version-0.5.0-E5484D?style=flat-square"></a>
   <a href="LICENSE"><img alt="Лицензия MIT" src="https://img.shields.io/badge/license-MIT-38BDF8?style=flat-square"></a>
   <a href="COMPATIBILITY.md"><img alt="Android 7.0+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white"></a>
   <a href="build.gradle.kts"><img alt="Kotlin 2.2" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?style=flat-square&logo=kotlin&logoColor=white"></a>
@@ -34,7 +34,7 @@
 </p>
 
 > [!WARNING]
-> **0.4.1 — тестовая сборка, а не готовый продукт.**
+> **0.5.0 — тестовая сборка, а не готовый продукт.**
 > Она проверена на эмуляторе Android 15 с программной заглушкой ELM327, но
 > ещё **не проверялась на автомобиле**, на реальном смартфоне, на головном
 > устройстве Android Auto и на живых адаптерах Bluetooth или USB. Ни один
@@ -42,8 +42,10 @@
 > в разделе [«Что проверено, а что нет»](#что-проверено-а-что-нет).
 
 > [!NOTE]
-> 0.4.1 содержит интерфейс и VAG UDS-каталог, описанные ниже. Сборка
-> по-прежнему не проверена на автомобиле, головном устройстве и живых адаптерах.
+> 0.5.0 содержит интерфейс, VAG UDS-каталог и read-only провайдер телеметрии
+> для DashGrid. Сборка по-прежнему не проверена на автомобиле, головном
+> устройстве и живых адаптерах; карточка DashGrid проверена на эмуляторе
+> с ДЕМО-значениями VPM.
 
 ## Что это
 
@@ -85,7 +87,7 @@ VAG Performance Monitor — самостоятельное Android-прилож�
 
 | Часть | Что показывает |
 |---|---|
-| **Главный экран** | ОЖ, наддув и температура масла в трёх аналогово-цифровых приборах; скорость, обороты, передача, мгновенный расход и остаток топлива в пяти плитках. Открывается по умолчанию. |
+| **Главный экран** | ОЖ, наддув и температура масла в трёх аналогово-цифровых приборах; скорость, обороты, передача, мгновенный расход и остаток топлива в пяти плитках. Открывается кнопкой приборов на экране диагностики. |
 | **Расширенный экран** | Те же три прибора меньше, панель категорий (двигатель, температуры, топливо, КП, турбо, диагностика) и адаптивная сетка: пять колонок на широком экране. Нажатие на прибор открывает его категорию. |
 | **Каталог данных** | Все 129 сигналов: поиск, фильтр по категориям, значение, запрос (PID/DID), блок, протокол и статус проверки. |
 | **Дневная тема** | Та же композиция на отдельных светлых токенах, а не инверсия картинки: [screen-day.png](docs/assets/screen-day-ru.png). |
@@ -127,10 +129,10 @@ Android Auto — это отдельная сборка **`aa`**, а не реж
 ## Одна телеметрия — три поверхности
 
 <p align="center">
-  <img src="docs/assets/surfaces.svg" alt="Схема трёх поверхностей: приборка, виджет, Android Auto" width="100%">
+  <img src="docs/assets/surfaces.svg" alt="Макет 0.4.1 трёх поверхностей: приборка, виджет, Android Auto" width="100%">
 </p>
 
-<p align="center"><sub>Схема, а не скриншоты: приборка, виджет и шаблон автомобильного экрана читают одно состояние.</sub></p>
+<p align="center"><sub>Макет 0.4.1, а не скриншоты: приборка, виджет и шаблон автомобильного экрана читают одно состояние.</sub></p>
 
 - **Приборка** — полный экран с тремя колодцами и плитками. Основной режим
   для телефона, планшета и AARE/DashGrid.
@@ -218,13 +220,16 @@ Android Auto — это отдельная сборка **`aa`**, а не реж
   CP210x, PL2303).
 - Унаследованный экран VAG Diag: подключение, поиск блоков, чтение и ручное
   стирание ошибок, OBD-II двигателя, live data и отчёт.
-- Полноэкранную приборку можно запустить на AARE/DashGrid как обычное
-  Android-приложение. Отдельной интеграции с хостом и поддержки AppWidgetHost
-  в DashGrid пока нет.
+- Полноэкранная приборка — обычная Activity, но `CockpitActivity` объявлена
+  `exported="false"`: AARE и DashGrid покажут её только там, где хост умеет
+  запускать приложение. Для DashGrid 1.3.0 есть read-only мост телеметрии:
+  `call("snapshot")` у провайдера отдаёт текущие значения, и DashGrid рисует
+  свою карточку, не открывая OBD. Контракт v1; служба и Activity приборки
+  остаются `exported="false"`.
 
 **Проверяемость**
 
-- 50 JVM-тестов: декодирование, битовые поля UDS, целостность каталога,
+- 61 JVM-тест: декодирование, битовые поля UDS, целостность каталога,
   разбор ответов, расписание опроса, backoff, устаревание, расход топлива
   и согласованность ДЕМО-модели.
 - Тест на поддельном транспорте ELM327 проверяет переключение заголовков
@@ -257,18 +262,17 @@ Google Mobile Services не нужны.
 
 ```sh
 # обычная сборка
-adb install -r VAG-Performance-Monitor-0.4.1-standard.apk
+adb install -r VAG-Performance-Monitor-0.5.0-standard.apk
 
 # сборка с Android Auto
-adb install -r VAG-Performance-Monitor-0.4.1-AA.apk
+adb install -r VAG-Performance-Monitor-0.5.0-AA.apk
 ```
 
 <details>
 <summary>Контрольные суммы SHA-256</summary>
 
 ```text
-73bab2e5b910ab4f59ef24592845ae8be9031a8e722ef7f65bcc94e906128d15  VAG-Performance-Monitor-0.4.1-standard.apk
-9b25899401b1957cf956be98fe9b0103f4ae2d2144cf7798ba3b6c0e13702d06  VAG-Performance-Monitor-0.4.1-AA.apk
+SHA-256 обоих APK 0.5.0 — в SHA256SUMS.txt среди ассетов релиза.
 certificate SHA-256: 8c5ded478ffa3ba33ae0f82e72ef7b1a1cd8ef2f522c84c803d7a22f24b31646
 ```
 
@@ -427,8 +431,9 @@ VAG-набор собран из OBDb/Audi-Q3 (CC BY-SA 4.0); у всех ста
 - Android Auto — только шаблонный список, без произвольного Canvas.
   Для публикации в Google Play нужен белый список хостов и проверка категории;
   в сборке для сайдлоада и AARE стоит `ALLOW_ALL_HOSTS_VALIDATOR`.
-- AARE/DashGrid: отдельной интеграции нет; AppWidgetHost в DashGrid
-  не реализован на стороне хоста.
+- AARE/DashGrid: read-only мост (контракт v1) появился в 0.5.0 и проверен
+  с DashGrid 1.3.0 на эмуляторе. Стандартный AppWidget VAG в DashGrid
+  по-прежнему не размещался, прогона на головном устройстве не было.
 - Профили выбираются вручную; определения по VIN нет.
 - VAG DID взяты из одного открытого набора Audi-Q3. Они декодированы, но не
   подтверждены на MQB TDI: часть блоков откажет в DID или ответит только
@@ -478,7 +483,7 @@ VAG-набор собран из OBDb/Audi-Q3 (CC BY-SA 4.0); у всех ста
 | [`BACKLOG.md`](BACKLOG.md) | приоритетный список работ |
 | [`docs/WIDGET.md`](docs/WIDGET.md) | виджет: размеры, темы, обновление |
 | [`docs/AA.md`](docs/AA.md) | Android Auto: сборка, шаблоны, проверка |
-| [`docs/AARE_DASHGRID.md`](docs/AARE_DASHGRID.md) | полноэкранная приборка на AARE |
+| [`docs/AARE_DASHGRID.md`](docs/AARE_DASHGRID.md) | виджет и отсутствующий read-only мост телеметрии |
 | [`docs/SPEC.md`](docs/SPEC.md) | полное техническое задание |
 | [`CHANGELOG.md`](CHANGELOG.md) | история изменений |
 | [`docs/releases/0.4.1.md`](docs/releases/0.4.1.md) | релизные заметки 0.4.1 |

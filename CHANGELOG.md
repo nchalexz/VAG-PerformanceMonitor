@@ -3,7 +3,35 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 версионирование — [Semantic Versioning](https://semver.org/lang/ru/).
 
-## [Unreleased]
+## [0.5.0] — 2026-11-27
+
+### Добавлено
+
+- Read-only `ContentProvider` `io.github.nchalexz.aaperfmon.bridge.TelemetryProvider`
+  для DashGrid: authority `io.github.nchalexz.aaperfmon.telemetry`, метод
+  `call("snapshot")`, контракт v1, до 128 сигналов в единицах приборки
+  и с группировкой по шести экранным категориям.
+- Автоподключение вынесено из `Telemetry.init` в `Telemetry.autoConnectOnce()`:
+  чтение снимка из DashGrid не запускает службу и не открывает OBD. Демо-значения
+  для снимка строятся из той же модели, что и на приборке.
+- Подписи и единицы в снимке — на языке самой приборки VPM (настройка языка
+  или системная локаль), а `updatedAt` — самый свежий `timestampMs` среди
+  отданных сигналов, `0`, если данных не было.
+- `versionName` 0.5.0, `versionCode` 6; в опубликованном 0.4.1 провайдера нет.
+
+### Безопасность
+
+- Разрешение `io.github.nchalexz.aaperfmon.permission.READ_TELEMETRY`
+  (`normal`), только чтение; `query`/`insert`/`update`/`delete` не поддерживаются,
+  история, VIN и настройки адаптера не отдаются.
+
+### Исправлено
+
+- Экран диагностики и уведомление службы телеметрии показывают актуальное
+  имя **VAG Performance Monitor** вместо прежнего «AA Performance Monitor».
+- README, схема трёх поверхностей и макет Android Auto приведены
+  в соответствие с 0.5.0: актуальные значения ДЕМО, версия и состояние
+  DashGrid (AppWidgetHost есть, read-only мост телеметрии появился в 0.5.0).
 
 ## [0.4.1] — 2026-11-27
 

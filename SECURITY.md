@@ -19,6 +19,25 @@ Access и управления регенерацией DPF.
 следующей итерации. Решение вынесено в [`BACKLOG.md`](BACKLOG.md), а не
 спрятано.
 
+## Read-only мост для DashGrid
+
+В 0.5.0 добавлен `ContentProvider`
+`io.github.nchalexz.aaperfmon.bridge.TelemetryProvider`:
+
+- authority `io.github.nchalexz.aaperfmon.telemetry`, `exported="true"`,
+  `readPermission` `io.github.nchalexz.aaperfmon.permission.READ_TELEMETRY`;
+- разрешение объявлено как `normal`: его получает любое приложение,
+  которое его запросит при установке. Это осознанный компромисс — отдаются
+  только текущие показания датчиков, без истории, VIN, пути к адаптеру
+  и настроек;
+- только `call("snapshot")`; `query`/`insert`/`update`/`delete` не
+  поддерживаются, `openFile` и `grantUriPermissions` не используются;
+- `call` дополнительно вызывает `enforceCallingOrSelfPermission`, даже
+  если `readPermission` уже стоит в манифесте;
+- провайдер не запускает службу, не подключает адаптер и не опрашивает
+  PID: он отдаёт уже собранное состояние, а в ДЕМО — значения той же
+  модели, которую показывает приборка.
+
 ## Разрешения
 
 | Разрешение | Зачем |
@@ -29,6 +48,7 @@ Access и управления регенерацией DPF.
 | `POST_NOTIFICATIONS` (Android 13+) | постоянное уведомление foreground-службы |
 | `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_CONNECTED_DEVICE` | телеметрия и обновление виджета при свёрнутой Activity |
 | USB host (feature) | адаптер через OTG; не требуется для установки |
+| `READ_TELEMETRY` (своё, `normal`) | чтение снимка телеметрии из DashGrid; без истории и управления |
 
 Приложение не запрашивает местоположение, камеру, контакты, хранилище
 общих файлов и не пользуется фоновой геолокацией.

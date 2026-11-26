@@ -60,6 +60,10 @@ object Telemetry {
     @Volatile
     private var initialized = false
 
+    /** Автоподключение предлагается один раз за процесс, а не на каждое чтение. */
+    @Volatile
+    private var autoConnectOffered = false
+
     private var engine: TelemetryEngine? = null
     private var source: SignalSource? = null
     private var valuesJob: Job? = null
@@ -84,11 +88,25 @@ object Telemetry {
         )
         watches["profile"] = profile.signalIds
         installLocked(DemoSignalSource(), ConnectionKind.DEMO, "ДЕМО", "")
+    }
 
-        val config = AdapterStore.load(app)
-        if (config != null && AdapterStore.autoConnect(app)) {
-            connect(config)
-        }
+    /**
+     * Однократное автоподключение при первом пользовательском входе.
+     *
+     * Инициализация [init] больше не подключает адаптер сама: процесс может
+     * быть поднят чтением read-only провайдера из DashGrid, и это не должно
+     * открывать OBD. Экран, служба или виджет вызывают этот метод, когда
+     * пользователь действительно открыл приложение.
+     */
+    @Synchronized
+    fun autoConnectOnce() {
+        if (!initialized || autoConnectOffered) return
+        autoConnectOffered = true
+        if (_state.value.connection == ConnectionKind.CONNECTED ||
+            _state.value.connection == ConnectionKind.CONNECTING
+        ) return
+        val config = AdapterStore.load(app) ?: return
+        if (AdapterStore.autoConnect(app)) connect(config)
     }
 
     fun connect(config: AdapterConfig) {
@@ -134,6 +152,7 @@ object Telemetry {
     @Synchronized
     fun useDemo() {
         if (!initialized) return
+        autoConnectOffered = true
         connectJob?.cancel()
         AdapterStore.setAutoConnect(app, false)
         installLocked(DemoSignalSource(), ConnectionKind.DEMO, "ДЕМО", "")
@@ -143,6 +162,7 @@ object Telemetry {
     @Synchronized
     fun disconnect() {
         if (!initialized) return
+        autoConnectOffered = true
         connectJob?.cancel()
         AdapterStore.setAutoConnect(app, false)
         valuesJob?.cancel()

@@ -26,6 +26,13 @@
     <uses-feature android:name="android.hardware.usb.host"
         android:required="false" />
 
+    <!-- Read-only мост для DashGrid. Обычное разрешение: данные — текущие
+         показания датчиков, без истории, VIN и управления адаптером. -->
+    <permission
+        android:name="io.github.nchalexz.aaperfmon.permission.READ_TELEMETRY"
+        android:protectionLevel="normal" />
+    <uses-permission android:name="io.github.nchalexz.aaperfmon.permission.READ_TELEMETRY" />
+
     <application
         android:name=".AapmApp"
         android:allowBackup="true"
@@ -33,6 +40,12 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.VagDiag">
+
+        <provider
+            android:name=".bridge.TelemetryProvider"
+            android:authorities="io.github.nchalexz.aaperfmon.telemetry"
+            android:exported="true"
+            android:readPermission="io.github.nchalexz.aaperfmon.permission.READ_TELEMETRY" />
 
         <receiver
             android:name=".widget.TelemetryWidgetProvider"

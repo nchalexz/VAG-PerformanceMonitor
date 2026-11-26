@@ -35,6 +35,7 @@ class TelemetryService : Service() {
     override fun onCreate() {
         super.onCreate()
         Telemetry.init(this)
+        Telemetry.autoConnectOnce()
         createChannel()
         startForegroundCompat(notification(Telemetry.state.value))
         scope.launch {
@@ -106,7 +107,7 @@ class TelemetryService : Service() {
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_telemetry)
-            .setContentTitle("AA Performance Monitor")
+            .setContentTitle(getString(R.string.app_name))
             .setContentText(text)
             .setContentIntent(open)
             .setOngoing(true)

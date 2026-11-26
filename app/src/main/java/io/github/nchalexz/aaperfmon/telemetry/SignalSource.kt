@@ -51,14 +51,24 @@ class DemoSignalSource(
     private val startedAt: Long = clock()
 
     override suspend fun read(definition: SignalDefinition): Reading {
-        val t = (clock() - startedAt) / 1000.0
+        val value = demoValue(definition.id)
+            ?: return Reading(null, ReadingState.UNSUPPORTED)
+        return Reading(value, ReadingState.OK)
+    }
+
+    /**
+     * Значение демонстрационной модели на момент [now], без опроса и без
+     * состояния движка. Read-only провайдер DashGrid использует его, когда
+     * процесс поднят чтением снимка: ДЕМО остаётся демонстрацией, а не
+     * пустыми «—» из-за незапущенной службы.
+     */
+    fun demoValue(id: String, now: Long = clock()): Double? {
+        val t = (now - startedAt) / 1000.0
         // Первые секунды модель стоит на значениях из макетов, затем
         // плавно начинает движение: так экран можно сверить с макетом
         // и одновременно увидеть анимацию стрелок.
         val amplitude = ((t - 3.0) / 6.0).coerceIn(0.0, 1.0)
-        val value = valueFor(definition.id, t, amplitude)
-            ?: return Reading(null, ReadingState.UNSUPPORTED)
-        return Reading(value, ReadingState.OK)
+        return valueFor(id, t, amplitude)
     }
 
     private fun valueFor(id: String, t: Double, amplitude: Double): Double? {

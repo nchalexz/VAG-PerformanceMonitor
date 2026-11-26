@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Version 0.4.1" src="https://img.shields.io/badge/version-0.4.1-E5484D?style=flat-square"></a>
+  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Version 0.5.0" src="https://img.shields.io/badge/version-0.5.0-E5484D?style=flat-square"></a>
   <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/license-MIT-38BDF8?style=flat-square"></a>
   <a href="#install"><img alt="Android 7.0+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white"></a>
   <a href="build.gradle.kts"><img alt="Kotlin 2.2" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?style=flat-square&logo=kotlin&logoColor=white"></a>
@@ -32,17 +32,18 @@
 </p>
 
 > [!WARNING]
-> **0.4.1 is a test build, not a verified release.**
+> **0.5.0 is a test build, not a verified release.**
 > It runs on an Android 15 emulator against a software ELM327 stub, but it has **not been tested in a
 > car**, on a real phone, on an Android Auto head unit or on live Bluetooth/USB adapters. No signal
 > has been confirmed on a vehicle. See [What is tested](#what-is-tested-what-is-not).
 
 > [!NOTE]
-> 0.4.1 contains the dashboard and the VAG UDS catalog described below. It is still not
-> verified in a car, on a head unit or with live adapters.
+> 0.5.0 contains the dashboard, the VAG UDS catalog and a read-only telemetry provider for
+> DashGrid. It is still not verified in a car, on a head unit or with live adapters; the DashGrid
+> cockpit was checked on an emulator with VPM's demo values.
 
 > [!NOTE]
-> **По-русски.** 0.4.1 — тестовая сборка для телеметрии VAG: 129 сигналов, приборка, виджет и
+> **По-русски.** 0.5.0 — тестовая сборка для телеметрии VAG: 129 сигналов, приборка, виджет и
 > отдельная AA-сборка. Проверено на эмуляторе Android 15 с программной заглушкой ELM327; на
 > реальном автомобиле, телефоне и головном устройстве — нет. Сборки `standard` и `aa` используют
 > один `applicationId`, поэтому ставьте только одну. Полный перевод и подробности —
@@ -82,7 +83,7 @@ Three principles shaped the app:
 
 | Part | What it does |
 |---|---|
-| **Dashboard** | Coolant, boost and oil temperature in three analog-digital gauges; speed, RPM, gear, instant consumption and fuel level in five tiles. Opens by default. |
+| **Dashboard** | Coolant, boost and oil temperature in three analog-digital gauges; speed, RPM, gear, instant consumption and fuel level in five tiles. Opens from the gauges icon on the diagnostics screen. |
 | **Extended dashboard** | The same three gauges smaller, a category bar (Engine, Temperatures, Fuel, Gearbox, Turbo, Diagnostics) and an adaptive grid — five columns on a wide screen. Tapping a gauge opens its category. |
 | **Data catalog** | All 129 signals with search, category filter, value, request (PID/DID), ECU, protocol and verification status. |
 | **Day theme** | The same composition with separate light tokens, not an inverted image. See [screen-day.png](docs/assets/screen-day.png). |
@@ -95,10 +96,10 @@ the dashboard always opens first.
 ## Android Auto
 
 <p align="center">
-  <img src="docs/assets/android-auto.png" width="100%" alt="Render of the VAG Performance ListTemplate screen with status and signal rows">
+  <img src="docs/assets/android-auto.png" width="100%" alt="Mockup of the VAG Performance Monitor ListTemplate screen with status and signal rows">
 </p>
 
-<p align="center"><sub>Render of the actual <code>ListTemplate</code>, not a head-unit screenshot. A real screenshot is not available: the emulator ships stub Android Auto, and neither DHU nor a head unit was tested.</sub></p>
+<p align="center"><sub>Mockup of the actual <code>ListTemplate</code> composition, not a head-unit screenshot. A real screenshot is not available: the emulator ships stub Android Auto, and neither DHU nor a head unit was tested.</sub></p>
 
 Android Auto is a separate **`aa`** build, not a mode of the standard one. It replaces `standard`
 (both share one `applicationId`) and adds a `CarAppService` from Car App Library 1.7.0.
@@ -112,23 +113,23 @@ Android Auto is a separate **`aa`** build, not a mode of the standard one. It re
 - The build has not been tested on a head unit or in the Desktop Head Unit. If a host does not list
   the app, that is a host limitation, not a missing `CarAppService`.
 - To test locally, install `*-AA.apk`, connect the phone to a DHU or head unit and open
-  “VAG Performance” from the host app list.
+  “VAG Performance Monitor” from the host app list.
 
 More: [docs/AA.md](docs/AA.md) and [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md).
 
 ## One telemetry — three surfaces
 
 <p align="center">
-  <img src="docs/assets/surfaces.svg" alt="Diagram of three surfaces: dashboard, widget and Android Auto" width="100%">
+  <img src="docs/assets/surfaces.svg" alt="0.4.1 mockup of three surfaces: dashboard, widget and Android Auto" width="100%">
 </p>
 
-<p align="center"><sub>A diagram, not screenshots: the dashboard, widget and car screen read one state.</sub></p>
+<p align="center"><sub>A 0.4.1 mockup, not screenshots: the dashboard, widget and car screen read one state.</sub></p>
 
 | Surface | What it shows | Connection |
 |---|---|---|
 | **Phone dashboard** | Full-screen gauges and tiles with demo/live switching. | Shared `Telemetry` state |
 | **Home-screen widget** | Up to four parameters or a compact two-parameter layout. | Shared `Telemetry` state |
-| **Android Auto / AARE** | A template list in the `aa` build; on AARE the full dashboard runs as a normal Activity. | Shared `Telemetry` state |
+| **Android Auto / AARE** | A template list in the `aa` build; AARE can show the full dashboard as an ordinary Activity where the host allows it. | Shared `Telemetry` state |
 
 All three read one `StateFlow` from the process-wide `Telemetry` object, and the widget is refreshed by
 `TelemetryService`. A second OBD session is not opened. The diagnostics screen is the exception: it
@@ -193,13 +194,16 @@ owns its own `Elm327`, so the two should not scan at the same time.
 - ELM327 transports: Wi-Fi, Bluetooth SPP and USB serial (CH340, FTDI, CP210x, PL2303).
 - The inherited VAG Diag screen: connect, scan modules, read and manually clear DTCs, OBD-II engine
   data, live data and a report.
-- The full dashboard can run on AARE/DashGrid as a normal Android app. There is no host integration
-  and no DashGrid AppWidgetHost support yet.
+- The full dashboard is an ordinary Activity, but `CockpitActivity` is `exported="false"`: AARE
+  and DashGrid can show it only where the host may launch the app. For DashGrid 1.3.0 there is a
+  read-only telemetry bridge instead: `call("snapshot")` on the provider returns the current
+  values, so DashGrid draws its own cockpit without opening OBD. The bridge is contract v1; the
+  service and the cockpit Activity stay `exported="false"`.
 
 **Verification**
 
-- 50 JVM tests: decoding, UDS bit fields, catalog integrity, payload parsing, polling schedule,
-  backoff, staleness, fuel consumption and demo-model consistency.
+- 61 JVM tests: decoding, UDS bit fields, catalog integrity, payload parsing, polling schedule,
+  backoff, staleness, fuel consumption, demo-model consistency and the read-only bridge snapshot.
 - A fake ELM327 transport test covers OBD→UDS header switching and negative UDS answers.
 - Demo mode opens every screen without an adapter or a car.
 - Dashboard, Extended Dashboard, catalog, settings, themes and languages were checked on an
@@ -225,18 +229,17 @@ Through `adb`:
 
 ```sh
 # standard build
-adb install -r VAG-Performance-Monitor-0.4.1-standard.apk
+adb install -r VAG-Performance-Monitor-0.5.0-standard.apk
 
 # Android Auto build
-adb install -r VAG-Performance-Monitor-0.4.1-AA.apk
+adb install -r VAG-Performance-Monitor-0.5.0-AA.apk
 ```
 
 <details>
 <summary>SHA-256 and signing certificate</summary>
 
 ```text
-73bab2e5b910ab4f59ef24592845ae8be9031a8e722ef7f65bcc94e906128d15  VAG-Performance-Monitor-0.4.1-standard.apk
-9b25899401b1957cf956be98fe9b0103f4ae2d2144cf7798ba3b6c0e13702d06  VAG-Performance-Monitor-0.4.1-AA.apk
+SHA-256 of both 0.5.0 APKs: see SHA256SUMS.txt in the release assets.
 certificate SHA-256: 8c5ded478ffa3ba33ae0f82e72ef7b1a1cd8ef2f522c84c803d7a22f24b31646
 ```
 
@@ -398,8 +401,9 @@ is confirmed on a car. See [SIGNAL_CATALOG.md](SIGNAL_CATALOG.md) and
 - No hardware verification: no real phone, car, head unit or live Bluetooth/USB adapter.
 - Android Auto is a template list only. Google Play publication needs a host allowlist and category
   review; sideloading and AARE use `ALLOW_ALL_HOSTS_VALIDATOR`.
-- AARE/DashGrid: no dedicated integration, and DashGrid’s AppWidgetHost is not implemented on the
-  host side.
+- AARE/DashGrid: the read-only bridge (contract v1) is in 0.5.0 and was verified with DashGrid
+  1.3.0 on an emulator. The standard Android AppWidget has still not been placed on DashGrid, and
+  no DashGrid head-unit run was possible.
 - Profiles are manual; there is no VIN-based selection.
 - VAG DIDs come from one open Audi-Q3 set. They are decoded, not confirmed on an MQB TDI; some
   blocks will refuse a DID or answer only after `10 03`, which this app does not send.
@@ -443,7 +447,7 @@ release would need a host allowlist. More: [SECURITY.md](SECURITY.md).
 | [docs/UI.md](docs/UI.md) | Dashboard design system, components, themes and navigation |
 | [docs/WIDGET.md](docs/WIDGET.md) | Widget sizes, themes and refresh |
 | [docs/AA.md](docs/AA.md) | Android Auto build, templates and testing |
-| [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md) | Full dashboard on AARE/DashGrid |
+| [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md) | Widget hosting and the read-only telemetry bridge |
 | [docs/SPEC.md](docs/SPEC.md) | Full technical specification |
 | [CHANGELOG.md](CHANGELOG.md) | Change history |
 | [docs/releases/0.4.1.md](docs/releases/0.4.1.md) | 0.4.1 release notes |

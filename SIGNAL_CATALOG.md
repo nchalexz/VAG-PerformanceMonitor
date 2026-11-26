@@ -1,6 +1,6 @@
 # Каталог сигналов
 
-Состояние на версию 0.4.0. Источник истины — код
+Состояние на версию 0.5.0. Источник истины — код
 [`SignalCatalog.kt`](app/src/main/java/io/github/nchalexz/aaperfmon/telemetry/SignalCatalog.kt);
 этот файл фиксирует счётчики и происхождение данных.
 

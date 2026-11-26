@@ -13,8 +13,8 @@ android {
         applicationId = "io.github.nchalexz.aaperfmon"
         minSdk = 24                 // Android 7, охватывает почти все живые телефоны
         targetSdk = 36              // требование Google Play с 31.08.2026
-        versionCode = 5
-        versionName = "0.4.1"
+        versionCode = 6
+        versionName = "0.5.0"
     }
 
     // Подпись включается ТОЛЬКО когда задана переменная окружения
@@ -108,4 +108,7 @@ dependencies {
     // ни автомобиль для них не нужны.
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    // JVM-тесты не должны видеть android.jar-заглушку org.json: она
+    // возвращает null из toString() и не проверяет реальный JSON-контракт.
+    testImplementation("org.json:json:20260814")
 }
