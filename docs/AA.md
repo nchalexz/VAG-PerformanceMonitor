@@ -1,5 +1,11 @@
 # Android Auto и AARE
 
+<p align="center">
+  <img src="assets/android-auto.png" width="100%" alt="Макет экрана Android Auto: список параметров">
+</p>
+
+<p align="center"><sub>Макет по фактическому шаблону ListTemplate, не снимок с головного устройства.</sub></p>
+
 ## Две сборки
 
 | Флевор | Что внутри | Для чего |
