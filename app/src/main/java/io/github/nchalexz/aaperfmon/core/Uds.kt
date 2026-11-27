@@ -1,7 +1,13 @@
 package io.github.nchalexz.aaperfmon.core
 
-/** Отрицательный ответ блока или отсутствие ответа. */
-class UdsError(message: String) : Exception(message)
+/**
+ * Отрицательный ответ блока или отсутствие ответа.
+ *
+ * [nrc] — код причины из отрицательного ответа UDS (`7F <сервис> <NRC>`).
+ * Для таймаута он равен null: «блок промолчал» и «блок сказал, что такого
+ * параметра нет» — разные ситуации, и путать их нельзя.
+ */
+class UdsError(message: String, val nrc: Int? = null) : Exception(message)
 
 /** Кадр разрешения: «шли всё сразу, без пауз между кадрами». */
 private const val FLOW_CONTROL = "3000000000000000"
@@ -100,7 +106,7 @@ class UdsClient(private val elm: Elm327, val txId: Int) {
                 lastError = "отказ блока: ${nrcText[nrc]}"
                 return@repeat
             }
-            throw UdsError("отказ блока: ${nrcText[nrc] ?: "код 0x%02X".format(nrc)}")
+            throw UdsError("отказ блока: ${nrcText[nrc] ?: "код 0x%02X".format(nrc)}", nrc)
         }
         throw UdsError(lastError)
     }
@@ -184,7 +190,7 @@ class UdsClient(private val elm: Elm327, val txId: Int) {
                         Thread.sleep(600)
                         return@repeat
                     }
-                    throw UdsError("отказ блока: ${nrcText[nrc] ?: "код 0x%02X".format(nrc)}")
+                    throw UdsError("отказ блока: ${nrcText[nrc] ?: "код 0x%02X".format(nrc)}", nrc)
                 }
                 if (source != null) rxId = source
                 return data

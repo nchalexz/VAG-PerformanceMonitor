@@ -151,6 +151,72 @@ data class UdsValueSpec(
     }
 }
 
+/**
+ * Приоритет опроса и срок актуальности.
+ *
+ * Значения взяты из требований к телеметрии: P0 и P1 считаются свежими
+ * пять секунд, редкие P2 — тридцать. Приоритет влияет на порядок очереди,
+ * а не на гарантированную частоту: частота всегда ограничена адаптером.
+ */
+enum class SignalPriority(val staleTimeoutMs: Long) {
+    /** Обороты, скорость, наддув, температура масла и ОЖ. */
+    P0(5_000L),
+
+    /** Момент, мощность, передача, педаль, давление топлива. */
+    P1(5_000L),
+
+    /** Остальные диагностические параметры и редкие температуры. */
+    P2(30_000L),
+}
+
+/** Как показывать последнее известное значение. */
+enum class SignalStatus {
+    /** Число получено и не старше срока актуальности. */
+    VALID,
+
+    /** Значение было, но устарело: показывается прочерк. */
+    STALE,
+
+    /** Успешного чтения не было ни разу за сессию: показывается N/A. */
+    NEVER_READ,
+}
+
+/**
+ * Как показывать число.
+ *
+ * Передача — не число на шкале: у неё есть P, R и N. Показывать «-2»
+ * вместо парковки бессмысленно, поэтому для неё отдельный вид.
+ */
+enum class ValueDisplay {
+    NUMBER,
+
+    /** Позиция селектора DSG: −2 = P, −1 = R, 0 = N, 1… = передача. */
+    GEAR,
+}
+
+/**
+ * Подписи позиции селектора.
+ *
+ * Смещение взято из открытого набора OBDb (поле `add = -2`): нулевое
+ * значение после смещения — нейтраль, отрицательные — парковка и задний
+ * ход. На реальном MQB это ещё не проверялось: на автомобиле P/R/N
+ * нужно сверить первыми.
+ */
+object GearLabel {
+    fun of(value: Double?): String {
+        if (value == null) return "—"
+        val rounded = Math.round(value).toInt()
+        if (Math.abs(value - rounded) > 0.01) return "—"
+        return when (rounded) {
+            -2 -> "P"
+            -1 -> "R"
+            0 -> "N"
+            in 1..10 -> rounded.toString()
+            else -> "—"
+        }
+    }
+}
+
 /** Какой показатель вычисляется из других сигналов. */
 enum class ComputedKind {
     /** Фактический момент, Н·м: процент из PID 0x62 от опорного момента 0x63. */
@@ -210,6 +276,10 @@ data class SignalDefinition(
     val maxValue: Double? = null,
     /** Рекомендуемая частота опроса, Гц. */
     val pollHz: Double = 1.0,
+    /** Приоритет очереди опроса и срок актуальности значения. */
+    val priority: SignalPriority = SignalPriority.P2,
+    /** Как рисовать значение: число или позиция селектора. */
+    val display: ValueDisplay = ValueDisplay.NUMBER,
     val source: String = "",
     val verification: Verification = Verification.DESCRIBED,
     val note: String = "",
@@ -222,6 +292,9 @@ data class SignalDefinition(
     val intervalMs: Long
         get() = (1000.0 / pollHz.coerceIn(0.05, 20.0)).toLong().coerceAtLeast(100L)
 
+    /** Сколько значение остаётся актуальным: 5 с для P0/P1, 30 с для P2. */
+    val staleTimeoutMs: Long get() = priority.staleTimeoutMs
+
     /** Текст запроса для журнала и документации. */
     val requestHex: String
         get() = when {
@@ -232,7 +305,10 @@ data class SignalDefinition(
 
     fun format(value: Double?): String {
         if (value == null) return "—"
-        return "%.${decimals}f".format(value)
+        return when (display) {
+            ValueDisplay.GEAR -> GearLabel.of(value)
+            ValueDisplay.NUMBER -> "%.${decimals}f".format(value)
+        }
     }
 }
 
@@ -246,18 +322,38 @@ enum class ReadingState {
 /** Последнее известное значение сигнала. */
 data class SignalValue(
     val value: Double?,
+    /** Время последнего успешного чтения по монотонным часам. */
     val timestampMs: Long,
     val state: ReadingState,
     val sourceLabel: String,
+    /** Время последней попытки чтения, удачной или нет. */
+    val lastAttemptMs: Long = timestampMs,
+    /** Было ли успешное чтение хотя бы раз за текущую сессию. */
+    val hasEverBeenRead: Boolean = value != null,
+    /** Сколько неудачных попыток подряд было после последнего успеха. */
+    val consecutiveFailures: Int = 0,
 ) {
-    /** Устарело ли значение к моменту now. */
-    fun isStale(now: Long, definition: SignalDefinition): Boolean {
-        if (state != ReadingState.OK) return true
-        val age = now - timestampMs
-        // Дешёвый ELM327 отвечает на один запрос за 150–300 мс, поэтому
-        // круг из десятка сигналов занимает несколько секунд. Порог в 3 с
-        // заставлял приборку мигать «—» между опросами; 6 с — это всё ещё
-        // «свежее» для медленного адаптера, но уже не выдаёт старьё за живое.
-        return age > maxOf(6_000L, definition.intervalMs * 6)
+    /**
+     * Состояние значения к моменту [now].
+     *
+     * Ошибка чтения сама по себе не стирает число: значение остаётся
+     * действительным, пока не истёк срок актуальности. Ноль — допустимый
+     * результат и всегда отличается от отсутствия данных.
+     */
+    fun statusAt(now: Long, definition: SignalDefinition): SignalStatus {
+        if (!hasEverBeenRead) return SignalStatus.NEVER_READ
+        if (value == null) return SignalStatus.STALE
+        // Монотонные часы обнуляются после перезагрузки телефона, а в кэше
+        // могло остаться время прошлой загрузки. «Будущее» — значит старьё.
+        if (timestampMs > now) return SignalStatus.STALE
+        return if (now - timestampMs > definition.staleTimeoutMs) {
+            SignalStatus.STALE
+        } else {
+            SignalStatus.VALID
+        }
     }
+
+    /** Устарело ли значение к моменту now. */
+    fun isStale(now: Long, definition: SignalDefinition): Boolean =
+        statusAt(now, definition) != SignalStatus.VALID
 }

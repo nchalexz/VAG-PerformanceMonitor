@@ -172,7 +172,9 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
         _state.update { it.copy(busy = true, task = title, progress = 0) }
         worker = viewModelScope.launch(Dispatchers.IO) {
             try {
-                block()
+                // Сканирование, чтение ошибок и идентификация занимают
+                // шину целиком: телеметрия ждёт, а не перемешивает запросы.
+                AdapterBus.transaction { block() }
             } catch (error: Exception) {
                 say("Ошибка: ${error.message}")
             } finally {
@@ -497,9 +499,13 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
         if (_state.value.liveRunning) return
         _state.update { it.copy(liveRunning = true) }
         loopJob = viewModelScope.launch(Dispatchers.IO) {
-            synchronized(adapter) { adapter.acceptAll() }
+            val supported = AdapterBus.transaction {
+                synchronized(adapter) {
+                    adapter.acceptAll()
+                    Obd.supportedPids(adapter)
+                }
+            }
             say("Определяю поддерживаемые параметры")
-            val supported = synchronized(adapter) { Obd.supportedPids(adapter) }
             val list = Obd.pids.keys.filter { it in supported }
                 .ifEmpty { listOf(0x05, 0x0C, 0x0D, 0x11, 0x42) }
             say("Доступно параметров: ${list.size}")
@@ -513,8 +519,12 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
 
             while (isActive && _state.value.liveRunning) {
                 val values = mutableListOf<LiveValue>()
-                for (pid in alive.toList()) {
-                    val answer = synchronized(adapter) { Obd.readPid(adapter, pid) }
+                val answers = AdapterBus.transaction {
+                    alive.toList().map { pid ->
+                        pid to synchronized(adapter) { Obd.readPid(adapter, pid) }
+                    }
+                }
+                for ((pid, answer) in answers) {
                     if (answer == null) {
                         val n = (misses[pid] ?: 0) + 1
                         misses[pid] = n
@@ -573,9 +583,13 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
             var previous: Int? = null
 
             while (isActive && _state.value.monitorRunning) {
-                val active = synchronized(adapter) { uds.faultBrief(0x01) }
+                val active = AdapterBus.transaction {
+                    synchronized(adapter) { uds.faultBrief(0x01) }
+                }
                 Thread.sleep(1200)
-                val total = synchronized(adapter) { uds.faultBrief(0xFF) }
+                val total = AdapterBus.transaction {
+                    synchronized(adapter) { uds.faultBrief(0xFF) }
+                }
 
                 val event = if (previous != null && active != null && active.count != previous)
                     "изменилось на %+d".format(active.count - previous!!) else ""

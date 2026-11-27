@@ -55,8 +55,36 @@ class MetricRegistryTest {
     @Test
     fun `oil gauge reports no data instead of zero`() {
         val reading = readMetric(MetricRegistry.oil, emptyMap(), 1_000L, canShowData = true)
-        assertEquals(MetricState.WAITING, reading.state)
-        assertEquals("—", reading.text)
+        // Нет ни одного успешного чтения — это N/A, а не прочерк.
+        assertEquals(MetricState.NEVER_READ, reading.state)
+        assertEquals("N/A", reading.text)
+    }
+
+    @Test
+    fun `gear shows selector positions and forward gears`() {
+        val now = 1_000L
+        fun text(raw: Double): String = readMetric(
+            MetricRegistry.gear,
+            mapOf("vehicle.gear" to SignalValue(raw, now, ReadingState.OK, "тест")),
+            now,
+            canShowData = true,
+        ).text
+
+        // Смещение из OBDb: 0 после смещения — нейтраль, отрицательные —
+        // парковка и задний ход. На автомобиле ещё не сверялось.
+        assertEquals("P", text(-2.0))
+        assertEquals("R", text(-1.0))
+        assertEquals("N", text(0.0))
+        assertEquals("5", text(5.0))
+        assertEquals("—", text(99.0))
+    }
+
+    @Test
+    fun `vag gear did is formatted as a selector position`() {
+        val definition = SignalCatalog.get("vag.7e1.210f.gear")!!
+        assertEquals("R", definition.format(-1.0))
+        assertEquals("N", definition.format(0.0))
+        assertEquals("3", definition.format(3.0))
     }
 
     @Test

@@ -8,6 +8,7 @@ import android.os.Bundle
 import io.github.nchalexz.aaperfmon.cockpit.CockpitPrefs
 import io.github.nchalexz.aaperfmon.cockpit.UiLanguage
 import io.github.nchalexz.aaperfmon.cockpit.resolveLanguage
+import io.github.nchalexz.aaperfmon.telemetry.MonotonicClock
 import io.github.nchalexz.aaperfmon.telemetry.Telemetry
 
 /**
@@ -41,7 +42,7 @@ class TelemetryProvider : ContentProvider() {
         }.getOrDefault(UiLanguage.EN)
         val snapshot = TelemetrySnapshot.build(
             Telemetry.state.value,
-            System.currentTimeMillis(),
+            MonotonicClock.now(),
             language,
         )
         return Bundle().apply {

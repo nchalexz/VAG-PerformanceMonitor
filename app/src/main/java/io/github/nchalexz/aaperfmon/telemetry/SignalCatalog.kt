@@ -467,7 +467,8 @@ object SignalCatalog {
                 minValue = 0.0,
                 maxValue = 8.0,
                 pollHz = 2.0,
-                source = "В демонстрационном режиме — модель; в автомобиле — DID блока 02 (не реализовано)",
+                display = ValueDisplay.GEAR,
+                source = "В демонстрационном режиме — модель; в автомобиле — DID 210F блока 02",
                 verification = Verification.DESCRIBED,
                 note = "Стандартный OBD-II передачу не отдаёт. Нужен профиль DSG.",
             )
@@ -475,11 +476,57 @@ object SignalCatalog {
     }
 
     /**
+     * Приоритеты из требований к частоте опроса.
+     *
+     * Таблица отдельная, а не разбросана по вызовам `obd()`: так видно весь
+     * набор приоритетных параметров сразу, и его легко сверить с заданием.
+     * Всё, чего здесь нет, — P2.
+     */
+    private val priorities: Map<String, SignalPriority> = mapOf(
+        // P0: то, на что смотрит водитель, и входы расчётного наддува.
+        Ids.RPM to SignalPriority.P0,
+        Ids.SPEED to SignalPriority.P0,
+        Ids.BOOST to SignalPriority.P0,
+        Ids.MAP to SignalPriority.P0,
+        Ids.BARO to SignalPriority.P0,
+        Ids.OIL_TEMP to SignalPriority.P0,
+        Ids.COOLANT to SignalPriority.P0,
+        // P1: момент, мощность, передача, педаль, давление топлива.
+        Ids.TORQUE_NM to SignalPriority.P1,
+        Ids.TORQUE_PCT to SignalPriority.P1,
+        Ids.TORQUE_REF to SignalPriority.P1,
+        Ids.POWER_KW to SignalPriority.P1,
+        Ids.GEAR to SignalPriority.P1,
+        Ids.PEDAL to SignalPriority.P1,
+        Ids.FUEL_PRESSURE to SignalPriority.P1,
+    )
+
+    /**
+     * Передача показывается буквами P/R/N, а не числом. DID 210F приходит
+     * со смещением −2, поэтому без этой пометки на приборке было бы «-2».
+     */
+    private val gearSignals: Set<String> = setOf(Ids.GEAR, "vag.7e1.210f.gear")
+
+    private fun decorate(definitions: List<SignalDefinition>): List<SignalDefinition> =
+        definitions.map { definition ->
+            val priority = priorities[definition.id]
+            val gear = definition.id in gearSignals
+            if (priority == null && !gear) {
+                definition
+            } else {
+                definition.copy(
+                    priority = priority ?: definition.priority,
+                    display = if (gear) ValueDisplay.GEAR else definition.display,
+                )
+            }
+        }
+
+    /**
      * Полный каталог: стандартные PID, вычисляемые показатели и VAG-сигналы
      * из UDS. Последние читаются только через `22 <DID>` и не выдаются за
      * подтверждённые: статус остаётся DECODED.
      */
-    val all: List<SignalDefinition> = obdSignals + VagSignals.all
+    val all: List<SignalDefinition> = decorate(obdSignals + VagSignals.all)
 
     private val index: Map<String, SignalDefinition> = all.associateBy { it.id }
 

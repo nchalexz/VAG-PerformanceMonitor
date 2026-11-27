@@ -86,14 +86,17 @@ class TelemetrySnapshotTest {
     }
 
     @Test
-    fun `old and failed readings are stale`() {
+    fun `old reading is stale, single failed attempt keeps the number`() {
         val stale = TelemetrySnapshot.build(
             state(values = mapOf(value(SignalCatalog.Ids.COOLANT, 86.0, now - 60_000))),
             now,
         ).signal(SignalCatalog.Ids.COOLANT)!!
         assertTrue(stale.stale)
         assertEquals("86", stale.value)
+        assertEquals("stale", stale.status)
 
+        // Одиночная ошибка не стирает последнее корректное значение:
+        // значение остаётся действительным, пока не истёк срок 5 секунд.
         val failed = TelemetrySnapshot.build(
             state(
                 values = mapOf(
@@ -102,9 +105,10 @@ class TelemetrySnapshotTest {
             ),
             now,
         ).signal(SignalCatalog.Ids.COOLANT)!!
-        assertNull(failed.value)
-        assertNull(failed.raw)
-        assertTrue(failed.stale)
+        assertEquals("86", failed.value)
+        assertEquals(86.0, failed.raw!!, 0.001)
+        assertFalse(failed.stale)
+        assertEquals("valid", failed.status)
     }
 
     @Test

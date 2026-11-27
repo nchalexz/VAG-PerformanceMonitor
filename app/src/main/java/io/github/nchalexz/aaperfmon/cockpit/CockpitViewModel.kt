@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.nchalexz.aaperfmon.cockpit.ui.DisplayCategory
 import io.github.nchalexz.aaperfmon.cockpit.ui.MetricRegistry
 import io.github.nchalexz.aaperfmon.telemetry.ConnectionKind
+import io.github.nchalexz.aaperfmon.telemetry.MonotonicClock
 import io.github.nchalexz.aaperfmon.telemetry.SignalCatalog
 import io.github.nchalexz.aaperfmon.telemetry.SignalValue
 import io.github.nchalexz.aaperfmon.telemetry.Telemetry
@@ -39,7 +40,7 @@ class CockpitViewModel(application: Application) : AndroidViewModel(application)
 
     private val ticker = flow {
         while (true) {
-            emit(System.currentTimeMillis())
+            emit(MonotonicClock.now())
             delay(500)
         }
     }
@@ -125,6 +126,21 @@ class CockpitViewModel(application: Application) : AndroidViewModel(application)
             visible.flatMap { spec -> spec.alternatives.map { it.signalId } },
         )
         Telemetry.setCatalogEnabled(false)
+        // Один показатель — один источник: запасной DID включается, только
+        // если основной PID молчит или устарел.
+        Telemetry.setFallbacks(fallbacks())
+    }
+
+    /** Какие запасные источники прикрыты основными. */
+    private fun fallbacks(): Map<String, String> {
+        val specs = buildList {
+            addAll(MetricRegistry.gauges)
+            addAll(MetricRegistry.mainTiles)
+            DisplayCategory.entries.forEach { addAll(MetricRegistry.category(it, includeVirtual = true)) }
+        }
+        return specs
+            .flatMap { spec -> spec.alternatives.map { alternative -> alternative.signalId to spec.signalId } }
+            .toMap()
     }
 
     override fun onCleared() {

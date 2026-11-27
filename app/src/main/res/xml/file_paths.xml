@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Что именно отдаёт FileProvider. Только каталог журнала телеметрии:
+     ни база, ни настройки, ни кэш цехом наружу не выставляются. -->
+<paths>
+    <cache-path name="diagnostics" path="diagnostics/" />
+</paths>

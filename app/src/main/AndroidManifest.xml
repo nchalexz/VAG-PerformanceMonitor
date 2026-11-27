@@ -41,6 +41,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.VagDiag">
 
+        <!-- Журнал производительности отдаётся только явным «Поделиться»:
+             FileProvider открывает узкий каталог diagnostics, не весь кэш. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <provider
             android:name=".bridge.TelemetryProvider"
             android:authorities="io.github.nchalexz.aaperfmon.telemetry"

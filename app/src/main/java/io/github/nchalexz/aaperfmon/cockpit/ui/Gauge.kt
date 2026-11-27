@@ -406,6 +406,7 @@ fun MetricTile(
         if (reading.state != MetricState.OK) {
             val dotColor = when (reading.state) {
                 MetricState.WAITING -> colors.dim
+                MetricState.NEVER_READ -> colors.tick
                 MetricState.STALE -> colors.warning
                 MetricState.UNSUPPORTED -> colors.tick
                 MetricState.ERROR, MetricState.OFFLINE -> colors.critical

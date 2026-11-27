@@ -10,12 +10,15 @@ import androidx.core.content.ContextCompat
 import io.github.nchalexz.aaperfmon.R
 import io.github.nchalexz.aaperfmon.cockpit.CockpitActivity
 import io.github.nchalexz.aaperfmon.telemetry.ConnectionKind
+import io.github.nchalexz.aaperfmon.telemetry.MonotonicClock
 import io.github.nchalexz.aaperfmon.telemetry.ReadingState
+import io.github.nchalexz.aaperfmon.telemetry.SignalStatus
 import io.github.nchalexz.aaperfmon.telemetry.SignalCatalog
 import io.github.nchalexz.aaperfmon.telemetry.SignalDefinition
 import io.github.nchalexz.aaperfmon.telemetry.SignalValue
 import io.github.nchalexz.aaperfmon.telemetry.Telemetry
 import io.github.nchalexz.aaperfmon.telemetry.TelemetryState
+import io.github.nchalexz.aaperfmon.telemetry.ValueDisplay
 import kotlin.math.roundToInt
 
 /**
@@ -70,7 +73,7 @@ object WidgetPublisher {
         views.setTextColor(R.id.widget_status, statusColor(context, state))
 
         val slots = if (compact) config.signalIds.take(2) else config.signalIds.take(4)
-        val now = System.currentTimeMillis()
+        val now = MonotonicClock.now()
         slots.forEachIndexed { index, signalId ->
             bindSlot(context, views, index, signalId, state.values[signalId], now)
         }
@@ -104,11 +107,17 @@ object WidgetPublisher {
         views.setTextViewText(slotLabel(index), definition.nameRu.uppercase())
         views.setTextViewText(slotUnit(index), definition.unit)
 
-        val stale = value == null || value.isStale(now, definition)
-        val number = if (stale) null else value?.value
+        val status = value?.statusAt(now, definition) ?: SignalStatus.NEVER_READ
+        val number = if (status == SignalStatus.VALID) value?.value else null
         views.setTextViewText(
             slotValue(index),
-            if (number == null) "—" else definition.format(number),
+            when {
+                number != null -> definition.format(number)
+                // Виджет живёт вне приложения: N/A здесь означает, что
+                // параметр ещё ни разу не прочитан, а не что он «сломан».
+                status == SignalStatus.NEVER_READ -> "N/A"
+                else -> "—"
+            },
         )
         views.setTextColor(
             slotValue(index),
@@ -120,7 +129,8 @@ object WidgetPublisher {
                 ContextCompat.getColor(context, R.color.widget_text)
             },
         )
-        val fraction = fraction(definition, number)
+        // У передачи нет шкалы: P/R/N и номер — это подпись, а не доля.
+        val fraction = if (definition.display == ValueDisplay.GEAR) null else fraction(definition, number)
         if (fraction == null) {
             views.setViewVisibility(slotValue(index), android.view.View.VISIBLE)
             views.setProgressBar(slotBar(index), 100, 0, false)

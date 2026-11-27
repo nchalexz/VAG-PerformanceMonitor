@@ -13,6 +13,8 @@ import androidx.car.app.validation.HostValidator
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import io.github.nchalexz.aaperfmon.telemetry.ConnectionKind
+import io.github.nchalexz.aaperfmon.telemetry.MonotonicClock
+import io.github.nchalexz.aaperfmon.telemetry.SignalStatus
 import io.github.nchalexz.aaperfmon.telemetry.Dashboards
 import io.github.nchalexz.aaperfmon.telemetry.SignalCatalog
 import io.github.nchalexz.aaperfmon.telemetry.Telemetry
@@ -21,6 +23,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -61,6 +64,14 @@ private class TelemetrySession : Session() {
                 created.invalidate()
             }
         }
+        // Новые значения приходят с частотой опроса, но «устарело» и `N/A`
+        // наступают без нового ответа. Экран обязан перерисоваться сам.
+        scope.launch {
+            while (true) {
+                delay(5_000)
+                created.invalidate()
+            }
+        }
         lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onDestroy(owner: LifecycleOwner) {
                 scope.cancel()
@@ -97,16 +108,16 @@ private class TelemetryScreen(carContext: androidx.car.app.CarContext) : Screen(
         val ids = state.profile.signalIds.ifEmpty {
             Dashboards.performance.signalIds.toSet()
         }
-        val now = System.currentTimeMillis()
+        val now = MonotonicClock.now()
         ids.mapNotNull { SignalCatalog.get(it) }
             .take(8)
             .forEach { definition ->
                 val value = state.values[definition.id]
-                val stale = value == null || value.isStale(now, definition)
-                val text = if (stale) {
-                    "—"
-                } else {
-                    "${definition.format(value.value)} ${definition.unit}".trim()
+                val status = value?.statusAt(now, definition) ?: SignalStatus.NEVER_READ
+                val text = when (status) {
+                    SignalStatus.VALID -> "${definition.format(value?.value)} ${definition.unit}".trim()
+                    SignalStatus.NEVER_READ -> "N/A"
+                    SignalStatus.STALE -> "—"
                 }
                 list.addItem(
                     Row.Builder()

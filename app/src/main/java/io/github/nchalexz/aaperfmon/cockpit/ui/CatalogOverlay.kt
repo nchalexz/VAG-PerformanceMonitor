@@ -182,7 +182,9 @@ fun CatalogOverlay(
                             if (reading.isOk) {
                                 "${reading.text} ${spec.unit(language)}".trim()
                             } else {
-                                "—"
+                                // «Нет данных» и «ещё не прочитан» — разные
+                                // вещи: N/A вместо прочерка честнее.
+                                reading.text
                             },
                             color = when {
                                 !reading.isOk -> colors.dim

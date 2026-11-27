@@ -13,8 +13,8 @@ android {
         applicationId = "io.github.nchalexz.aaperfmon"
         minSdk = 24                 // Android 7, охватывает почти все живые телефоны
         targetSdk = 36              // требование Google Play с 31.08.2026
-        versionCode = 7
-        versionName = "0.5.1"
+        versionCode = 8
+        versionName = "0.6.0"
     }
 
     // Подпись включается ТОЛЬКО когда задана переменная окружения

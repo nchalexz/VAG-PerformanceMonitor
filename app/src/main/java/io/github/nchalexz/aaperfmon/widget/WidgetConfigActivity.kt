@@ -212,7 +212,7 @@ private fun WidgetPreview(
     signals: List<String>,
     values: Map<String, io.github.nchalexz.aaperfmon.telemetry.SignalValue>,
 ) {
-    val now = System.currentTimeMillis()
+    val now = io.github.nchalexz.aaperfmon.telemetry.MonotonicClock.now()
     Card("Предпросмотр") {
         Column(
             Modifier.fillMaxWidth()

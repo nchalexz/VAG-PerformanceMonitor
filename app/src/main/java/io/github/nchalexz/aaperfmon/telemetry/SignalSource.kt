@@ -12,6 +12,7 @@ import kotlin.math.sin
 data class Reading(
     val value: Double?,
     val state: ReadingState,
+    val failure: ReadingFailure = ReadingFailure.NONE,
 )
 
 /**
@@ -24,6 +25,15 @@ data class Reading(
 interface SignalSource {
     val label: String
     suspend fun read(definition: SignalDefinition): Reading
+
+    /**
+     * Читает несколько параметров за одну транзакцию, если источник и
+     * блок это умеют. По умолчанию — по одному: не все адаптеры и ECU
+     * поддерживают пакетный запрос DID, и притворяться иначе нельзя.
+     */
+    suspend fun readBatch(definitions: List<SignalDefinition>): Map<String, Reading> =
+        definitions.associate { it.id to read(it) }
+
     fun close() {}
 }
 
@@ -237,12 +247,32 @@ class DemoSignalSource(
     }
 }
 
+/** Почему чтение не дало числа. Нужно, чтобы отличать таймаут от отказа блока. */
+enum class ReadingFailure {
+    NONE,
+
+    /** Адаптер или блок не ответили в отведённое время. */
+    TIMEOUT,
+
+    /** Блок ответил отрицательно: параметр не поддерживается или недоступен. */
+    NEGATIVE,
+
+    /** Сломался сам канал: обрыв, занятый порт, ошибка ввода-вывода. */
+    TRANSPORT,
+}
+
 /**
- * Настоящий источник: стандартные PID через ELM327.
+ * Настоящий источник: стандартные PID и VAG DID через ELM327.
  *
- * Один запрос — один сигнал. Движок специально не объединяет запросы:
- * дешёвые адаптеры плохо переносят несколько PID в одной команде, а
- * выигрыш в скорости не стоит потерянных ответов.
+ * Один запрос — одна транзакция. Движок специально не объединяет разные
+ * ECU: перед каждым блоком выставляется его адрес, и переключение адресов
+ * стоит времени. Внутри одного UDS-блока пакетное чтение нескольких DID
+ * пробуется один раз за соединение: если блок его не понял, источник
+ * навсегда возвращается к одиночным запросам.
+ *
+ * Конфигурация адаптера кэшируется: заголовок 7DF, фильтры приёма и режим
+ * кадров выставляются только при реальной смене состояния, а не перед
+ * каждым PID.
  *
  * Блокирующий обмен адаптера уведён в Dispatchers.IO: движок остаётся
  * корутинным и не замораживает интерфейс.
@@ -257,10 +287,9 @@ class Elm327SignalSource(
     /**
      * Фильтры приёма настраиваются один раз на соединение.
      *
-     * Заголовок проверяется перед каждым запросом, а не один раз: то же
-     * соединение использует диагностический экран, и после чтения блока
-     * в адаптере остаётся его адрес. Если не вернуть 7DF, стандартные PID
-     * уйдут не в двигатель, а в последний открытый блок.
+     * После чтения блока диагностическим экраном в адаптере остаётся его
+     * адрес. Для OBD-II нужен функциональный 7DF, иначе запрос уйдёт не в
+     * двигатель, а в последний открытый блок.
      */
     @Volatile
     private var filtersPrepared = false
@@ -278,15 +307,142 @@ class Elm327SignalSource(
     /** Был ли включён фильтр ответа при дочитывании многокадрового UDS. */
     private var udsFilterActive = false
 
+    /**
+     * Поддерживает ли блок пакетный `22 DID1 DID2 ...`.
+     *
+     * null — ещё не проверяли, true/false — проверено. Проверка делается
+     * один раз на соединение и только для блока, у которого в очереди
+     * оказалось два и более DID.
+     */
+    private val batchSupport = mutableMapOf<Int, Boolean>()
+
     private data class CachedUds(val at: Long, val reading: Reading)
 
     override suspend fun read(definition: SignalDefinition): Reading = withContext(Dispatchers.IO) {
-        if (definition.isUds) readUds(definition) else readObd(definition)
+        readOne(definition)
     }
+
+    /**
+     * Пакетное чтение. Пакет имеет смысл только внутри одного UDS-блока;
+     * для OBD-II и для разных блоков запросы выполняются по очереди.
+     */
+    override suspend fun readBatch(definitions: List<SignalDefinition>): Map<String, Reading> =
+        withContext(Dispatchers.IO) {
+            if (definitions.isEmpty()) return@withContext emptyMap()
+            if (definitions.size == 1) {
+                val definition = definitions.first()
+                return@withContext mapOf(definition.id to readOne(definition))
+            }
+            readGroup(definitions)
+        }
 
     /** Закрывает общий адаптер: второе соединение к тому же ELM327 невозможно. */
     override fun close() {
         runCatching { elm.close() }
+    }
+
+    private fun readOne(definition: SignalDefinition): Reading =
+        if (definition.isUds) readUds(definition) else readObd(definition)
+
+    private fun readGroup(definitions: List<SignalDefinition>): Map<String, Reading> {
+        val first = definitions.first()
+        val sameBlock = definitions.all { it.isUds && it.txId == first.txId }
+        val dids = definitions.mapNotNull { it.did }.distinct()
+        if (!sameBlock || first.txId == null || dids.size < 2) {
+            return definitions.associate { it.id to readOne(it) }
+        }
+        val txId = first.txId
+        if (batchSupport[txId] == false) {
+            return definitions.associate { it.id to readOne(it) }
+        }
+        val lengths = definitions.groupBy { it.did!! }.mapValues { (_, defs) ->
+            defs.maxOf { requiredBytes(it.uds) }
+        }
+        val client = udsClients.getOrPut(txId) { UdsClient(elm, txId) }
+        first.rxId?.let { client.expectResponse(it) }
+
+        val request = "22" + dids.joinToString("") { "%04X".format(it) }
+        val data = try {
+            synchronized(elm) {
+                // Следующий OBD-запрос обязан снова выставить 7DF.
+                filtersPrepared = false
+                client.request(request, timeoutMs = 1_200, attempts = 1)
+            }
+        } catch (error: UdsError) {
+            if (batchSupport[txId] == null) {
+                // Первая же попытка пакета не удалась: блок или адаптер его
+                // не понимает. Запоминаем это и читаем по одному.
+                batchSupport[txId] = false
+                return definitions.associate { it.id to readOne(it) }
+            }
+            val reading = classify(error)
+            return definitions.associate { it.id to reading }
+        } catch (error: Exception) {
+            val reading = Reading(null, ReadingState.ERROR, ReadingFailure.TRANSPORT)
+            return definitions.associate { it.id to reading }
+        }
+
+        val parsed = parseBatch(data, dids, lengths)
+        if (parsed == null) {
+            // Ответ не разложился по DID: пакет не поддержан. Больше не
+            // пробуем на этом соединении и честно читаем каждый DID отдельно.
+            batchSupport[txId] = false
+            return definitions.associate { it.id to readOne(it) }
+        }
+        batchSupport[txId] = true
+        if (client.mfStrategy != null) udsFilterActive = true
+        val now = System.currentTimeMillis()
+        return definitions.associate { definition ->
+            val payload = parsed[definition.did]
+            val reading = if (payload == null) {
+                Reading(null, ReadingState.ERROR, ReadingFailure.NEGATIVE)
+            } else {
+                val value = definition.uds?.decode(payload)
+                if (value == null) {
+                    Reading(null, ReadingState.ERROR, ReadingFailure.NEGATIVE)
+                } else {
+                    Reading(value, ReadingState.OK)
+                }
+            }
+            val key = (txId.toLong() shl 32) or (definition.did!!.toLong() and 0xFFFFFFFFL)
+            if (reading.state == ReadingState.OK) udsCache[key] = CachedUds(now, reading)
+            definition.id to reading
+        }
+    }
+
+    /**
+     * Раскладывает ответ `62 DID1 данные DID2 данные ...` на полезные
+     * нагрузки. Возвращает null, если разметка не сходится: значит, блок
+     * вернул не пакетный ответ, и выдавать его за данные нельзя.
+     */
+    private fun parseBatch(
+        data: ByteArray,
+        dids: List<Int>,
+        lengths: Map<Int, Int>,
+    ): Map<Int, ByteArray>? {
+        if (data.size < 3 || data[0].toInt() and 0xFF != 0x62) return null
+        val result = mutableMapOf<Int, ByteArray>()
+        var offset = 1
+        for (did in dids) {
+            if (offset + 2 > data.size) return null
+            val got = ((data[offset].toInt() and 0xFF) shl 8) or (data[offset + 1].toInt() and 0xFF)
+            if (got != did) return null
+            offset += 2
+            val length = lengths[did] ?: return null
+            if (offset + length > data.size) return null
+            result[did] = data.copyOfRange(offset, offset + length)
+            offset += length
+        }
+        // Хвост означает, что данные хотя бы одного DID длиннее, чем нам
+        // нужно для формулы: разметка пакета ненадёжна.
+        if (offset != data.size) return null
+        return result
+    }
+
+    /** Сколько байтов полезной нагрузки нужно декодеру. */
+    private fun requiredBytes(spec: UdsValueSpec?): Int {
+        if (spec == null || spec.bitLength <= 0) return 0
+        return (spec.bitOffset + spec.bitLength + 7) / 8
     }
 
     private fun readObd(definition: SignalDefinition): Reading {
@@ -311,22 +467,30 @@ class Elm327SignalSource(
                 elm.command(command, timeoutMs)
             }
         } catch (_: Exception) {
-            return Reading(null, ReadingState.ERROR)
+            return Reading(null, ReadingState.ERROR, ReadingFailure.TRANSPORT)
+        }
+        if (lines.isEmpty()) {
+            // Пустой ответ при непустом запросе — это таймаут, а не «нет PID».
+            return Reading(null, ReadingState.ERROR, ReadingFailure.TIMEOUT)
         }
         if (IsoTp.isNegative(lines)) {
             val text = lines.joinToString(" ").uppercase()
             val unsupported = text.contains("NO DATA") || text.contains("?") ||
                 text.contains("UNABLE") || text.contains("BUS INIT")
-            return Reading(
-                null,
-                if (unsupported) ReadingState.UNSUPPORTED else ReadingState.ERROR,
-            )
+            return if (unsupported) {
+                Reading(null, ReadingState.UNSUPPORTED, ReadingFailure.NEGATIVE)
+            } else {
+                Reading(null, ReadingState.ERROR, ReadingFailure.TIMEOUT)
+            }
         }
         val payload = ObdPayload.mode01(lines, pid)
-            ?: return Reading(null, ReadingState.UNSUPPORTED)
+            ?: return Reading(null, ReadingState.UNSUPPORTED, ReadingFailure.NEGATIVE)
         val value = definition.decode?.decode(payload)
-        return if (value == null) Reading(null, ReadingState.ERROR)
-        else Reading(value, ReadingState.OK)
+        return if (value == null) {
+            Reading(null, ReadingState.ERROR, ReadingFailure.NEGATIVE)
+        } else {
+            Reading(value, ReadingState.OK)
+        }
     }
 
     /**
@@ -355,26 +519,49 @@ class Elm327SignalSource(
                 client.request("22%04X".format(did), timeoutMs = 900, attempts = 1)
             }
         } catch (error: UdsError) {
-            // Нет ответа, «вне диапазона», «нужен доступ» — для приборки это
-            // одинаково «параметр не отдаётся», а не сломанный адаптер.
-            return Reading(null, ReadingState.UNSUPPORTED)
+            return classify(error)
         } catch (_: Exception) {
-            return Reading(null, ReadingState.ERROR)
+            return Reading(null, ReadingState.ERROR, ReadingFailure.TRANSPORT)
         }
         if (client.lastTruncated || data.size < 3) {
-            return Reading(null, ReadingState.ERROR)
+            return Reading(null, ReadingState.ERROR, ReadingFailure.TIMEOUT)
         }
         if (data[0].toInt() and 0xFF != 0x62 ||
             data[1].toInt() and 0xFF != (did shr 8) ||
             data[2].toInt() and 0xFF != (did and 0xFF)
         ) {
-            return Reading(null, ReadingState.ERROR)
+            return Reading(null, ReadingState.ERROR, ReadingFailure.NEGATIVE)
         }
         if (client.mfStrategy != null) udsFilterActive = true
         val payload = data.copyOfRange(3, data.size)
-        val value = decoder.decode(payload) ?: return Reading(null, ReadingState.ERROR)
+        val value = decoder.decode(payload)
+            ?: return Reading(null, ReadingState.ERROR, ReadingFailure.NEGATIVE)
         val reading = Reading(value, ReadingState.OK)
         udsCache[key] = CachedUds(now, reading)
         return reading
+    }
+
+    /**
+     * Отделяет «блок сказал, что такого параметра нет» от «блок не ответил».
+     *
+     * NRC 0x11/0x12/0x13/0x22/0x31/0x33/0x7F означают отказ по смыслу
+     * запроса; всё остальное — таймаут или занятость, которую надо
+     * повторить позже, а не помечать параметр недоступным навсегда.
+     */
+    private fun classify(error: UdsError): Reading {
+        val nrc = error.nrc
+        val negative = nrc != null && nrc in NEGATIVE_NRC
+        return if (negative) {
+            Reading(null, ReadingState.UNSUPPORTED, ReadingFailure.NEGATIVE)
+        } else {
+            // Блок жив (на него идут другие запросы), но конкретный DID не
+            // отдал: для приборки это «параметр недоступен», а таймаут
+            // остаётся в метриках отдельным счётчиком.
+            Reading(null, ReadingState.UNSUPPORTED, ReadingFailure.TIMEOUT)
+        }
+    }
+
+    private companion object {
+        val NEGATIVE_NRC = setOf(0x11, 0x12, 0x13, 0x22, 0x31, 0x33, 0x7F)
     }
 }

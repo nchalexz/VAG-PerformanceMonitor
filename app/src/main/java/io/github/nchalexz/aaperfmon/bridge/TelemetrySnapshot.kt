@@ -5,8 +5,8 @@ import io.github.nchalexz.aaperfmon.cockpit.ui.DisplayCategory
 import io.github.nchalexz.aaperfmon.cockpit.ui.MetricRegistry
 import io.github.nchalexz.aaperfmon.telemetry.ConnectionKind
 import io.github.nchalexz.aaperfmon.telemetry.DemoSignalSource
-import io.github.nchalexz.aaperfmon.telemetry.ReadingState
 import io.github.nchalexz.aaperfmon.telemetry.SignalCatalog
+import io.github.nchalexz.aaperfmon.telemetry.SignalStatus
 import io.github.nchalexz.aaperfmon.telemetry.TelemetryState
 import org.json.JSONArray
 import org.json.JSONObject
@@ -28,6 +28,8 @@ data class BridgeSignal(
     val stale: Boolean,
     val warning: Boolean,
     val category: String,
+    /** valid, stale или never_read: разница между «—» и N/A видна и снаружи. */
+    val status: String,
 )
 
 /** The snapshot VPM publishes through its ContentProvider. */
@@ -79,10 +81,18 @@ object TelemetrySnapshot {
             .mapNotNull { (category, spec) ->
                 val definition = SignalCatalog.get(spec.signalId) ?: return@mapNotNull null
                 val value = state.values[spec.signalId]
-                val raw = if (isDemo) {
-                    demo.demoValue(spec.signalId, now)
-                } else {
-                    value?.takeIf { it.state == ReadingState.OK }?.value
+                val demoRaw = if (isDemo) demo.demoValue(spec.signalId, now) else null
+                val status = when {
+                    isDemo -> if (demoRaw == null) SignalStatus.NEVER_READ else SignalStatus.VALID
+                    else -> value?.statusAt(now, definition) ?: SignalStatus.NEVER_READ
+                }
+                val raw = when {
+                    isDemo -> demoRaw
+                    // Устаревшее значение отдаётся вместе с флагом stale:
+                    // DashGrid сам решает, показывать его приглушённо или
+                    // прочерком. N/A — только когда числа не было вовсе.
+                    status == SignalStatus.NEVER_READ -> null
+                    else -> value?.value
                 }
                 val display = raw?.let { spec.display(it) }
                 BridgeSignal(
@@ -91,9 +101,10 @@ object TelemetrySnapshot {
                     value = if (raw == null) null else spec.format(raw, spec.factor, spec.decimals),
                     unit = spec.unit(language),
                     raw = display,
-                    stale = if (isDemo) raw == null else value == null || value.isStale(now, definition),
+                    stale = status != SignalStatus.VALID,
                     warning = spec.warningValue(display),
                     category = category.id,
+                    status = status.name.lowercase(),
                 )
             }
         // The contract defines updatedAt as the newest timestamp among the
@@ -136,6 +147,7 @@ object TelemetrySnapshot {
                     put("stale", signal.stale)
                     put("warning", signal.warning)
                     put("category", signal.category)
+                    put("status", signal.status)
                 },
             )
         }

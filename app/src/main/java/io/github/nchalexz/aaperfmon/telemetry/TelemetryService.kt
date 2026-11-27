@@ -18,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -42,6 +43,15 @@ class TelemetryService : Service() {
             Telemetry.state.collectLatest { state ->
                 updateNotification(state)
                 WidgetPublisher.publishAll(this@TelemetryService, state)
+            }
+        }
+        // Виджет живёт вне процесса и не перерисовывается от «ничего не
+        // произошло». Раз в полминуты обновляем его принудительно, чтобы
+        // значения успевали стать «—» или `N/A` по сроку давности.
+        scope.launch {
+            while (true) {
+                delay(30_000)
+                WidgetPublisher.publishAll(this@TelemetryService, Telemetry.state.value, force = true)
             }
         }
     }

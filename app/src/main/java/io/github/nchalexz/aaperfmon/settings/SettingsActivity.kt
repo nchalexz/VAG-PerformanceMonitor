@@ -1,6 +1,7 @@
 package io.github.nchalexz.aaperfmon.settings
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -51,20 +52,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.github.nchalexz.aaperfmon.BuildConfig
 import io.github.nchalexz.aaperfmon.telemetry.ConnectionKind
 import io.github.nchalexz.aaperfmon.cockpit.CockpitPrefs
 import io.github.nchalexz.aaperfmon.cockpit.LanguageMode
 import io.github.nchalexz.aaperfmon.cockpit.ThemeMode
-import io.github.nchalexz.aaperfmon.telemetry.ReadingState
+import io.github.nchalexz.aaperfmon.telemetry.MonotonicClock
+import io.github.nchalexz.aaperfmon.telemetry.SignalStatus
 import io.github.nchalexz.aaperfmon.telemetry.SignalCatalog
 import io.github.nchalexz.aaperfmon.telemetry.SignalValue
 import io.github.nchalexz.aaperfmon.telemetry.Telemetry
+import io.github.nchalexz.aaperfmon.telemetry.TelemetryMetrics
 import io.github.nchalexz.aaperfmon.telemetry.VehicleProfile
 import io.github.nchalexz.aaperfmon.telemetry.VehicleProfiles
 import io.github.nchalexz.aaperfmon.ui.BgColor
@@ -73,6 +79,7 @@ import io.github.nchalexz.aaperfmon.ui.DarkScheme
 import io.github.nchalexz.aaperfmon.ui.DimColor
 import io.github.nchalexz.aaperfmon.ui.TextColor
 import io.github.nchalexz.aaperfmon.ui.WarnColor
+import kotlinx.coroutines.delay
 
 class SettingsActivity : ComponentActivity() {
 
@@ -260,11 +267,13 @@ fun SettingsScreen(onClose: () -> Unit, model: SettingsViewModel = viewModel()) 
                     }
                 }
 
+                DiagnosticsCard()
+
                 Card("Сохранённые параметры") {
                     if (form.profile.signalIds.isEmpty()) {
                         Text("Профиль пуст — выберите параметры.", color = DimColor, fontSize = 12.sp)
                     } else {
-                        val now = System.currentTimeMillis()
+                        val now = MonotonicClock.now()
                         form.profile.signalIds.sorted().forEach { id ->
                             SavedValueRow(
                                 id = id,
@@ -287,6 +296,93 @@ fun SettingsScreen(onClose: () -> Unit, model: SettingsViewModel = viewModel()) 
                 model.setSignals(it)
                 pickerOpen = false
             },
+        )
+    }
+}
+
+/**
+ * Сводка производительности опроса и экспорт журнала.
+ *
+ * Числа обновляются раз в секунду с той же частотой, с какой их считает
+ * движок: это диагностика, а не элемент приборки. Экспорт отдаёт JSON
+ * соседнему приложению через системный «Поделиться»; VIN в файле нет.
+ */
+@Composable
+private fun DiagnosticsCard() {
+    val context = LocalContext.current
+    var snapshot by remember { mutableStateOf<TelemetryMetrics.Snapshot?>(null) }
+    var message by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        while (true) {
+            snapshot = Telemetry.diagnosticsSnapshot()
+            delay(1_000)
+        }
+    }
+    Card("Диагностика телеметрии") {
+        val current = snapshot
+        if (current == null || current.requests == 0L) {
+            Text(
+                "Опрос ещё не начат. Подключите адаптер и вернитесь сюда.",
+                color = DimColor,
+                fontSize = 12.sp,
+            )
+        } else {
+            Text(
+                "Запросов/с: ${current.requestRateHz} · средняя ${current.averageLatencyMs} мс · " +
+                    "P95 ${current.p95LatencyMs} мс",
+                color = TextColor,
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+            )
+            Spacer(Modifier.height(3.dp))
+            Text(
+                "Успешных ${current.successPercent}% · таймаутов ${current.timeouts} · " +
+                    "смен ECU ${current.ecuSwitches} · очередь ${current.queueDepth}",
+                color = DimColor,
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+            )
+            Spacer(Modifier.height(3.dp))
+            Text(
+                "Обновлено параметров: ${current.signals.size} · " +
+                    "переходов в «устарело» ${current.staleTransitions}",
+                color = DimColor,
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(
+                onClick = {
+                    message = runCatching {
+                        val file = Telemetry.exportDiagnostics(context)
+                            ?: error("журнал недоступен")
+                        val uri = FileProvider.getUriForFile(
+                            context,
+                            "${BuildConfig.APPLICATION_ID}.files",
+                            file,
+                        )
+                        val send = Intent(Intent.ACTION_SEND).apply {
+                            type = "application/json"
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        context.startActivity(Intent.createChooser(send, "Журнал телеметрии"))
+                        "Журнал: ${file.name}"
+                    }.getOrElse { "Не удалось экспортировать журнал" }
+                },
+            ) { Text("Экспорт журнала", fontSize = 11.sp) }
+        }
+        if (message.isNotBlank()) {
+            Spacer(Modifier.height(4.dp))
+            Text(message, color = DimColor, fontSize = 10.sp)
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "Журнал — технические числа: частоты, задержки, таймауты. VIN не пишется.",
+            color = DimColor,
+            fontSize = 10.sp,
         )
     }
 }
@@ -406,20 +502,19 @@ private fun DevicePicker(
 @Composable
 private fun SavedValueRow(id: String, value: SignalValue?, now: Long) {
     val definition = SignalCatalog.get(id) ?: return
-    val stale = value == null || value.isStale(now, definition)
+    val status = value?.statusAt(now, definition) ?: SignalStatus.NEVER_READ
     Row(
         Modifier.fillMaxWidth().padding(vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(definition.nameRu, color = DimColor, fontSize = 12.sp, modifier = Modifier.weight(1f))
         Text(
-            when {
-                value == null -> "—"
-                stale && value.state != ReadingState.OK -> "—"
-                stale -> "устарело"
-                else -> "${definition.format(value.value)} ${definition.unit}"
+            when (status) {
+                SignalStatus.NEVER_READ -> "N/A"
+                SignalStatus.STALE -> "— устарело"
+                SignalStatus.VALID -> "${definition.format(value?.value)} ${definition.unit}"
             },
-            color = if (stale) DimColor else TextColor,
+            color = if (status == SignalStatus.VALID) TextColor else DimColor,
             fontSize = 12.sp,
             fontFamily = FontFamily.Monospace,
         )

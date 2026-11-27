@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.hardware.usb.UsbManager
+import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import io.github.nchalexz.aaperfmon.core.AdapterHolder
 import io.github.nchalexz.aaperfmon.core.BluetoothTransport
@@ -72,15 +73,28 @@ object Telemetry {
     private var valuesJob: Job? = null
     private var connectJob: Job? = null
 
+    /**
+     * Метрики последней сессии. Держим их и после отключения: журнал
+     * производительности нужен как раз тогда, когда связь уже потеряна.
+     */
+    @Volatile
+    private var lastMetrics: TelemetryMetrics? = null
+
     /** Подписки разных экранов: дашборд, виджеты, профиль. */
     private val watches = mutableMapOf<String, Set<String>>()
     private var catalogEnabled = false
+
+    /** Запасные источники: переживают переподключение адаптера. */
+    @Volatile
+    private var fallbacks: Map<String, String> = emptyMap()
 
     @Synchronized
     fun init(context: Context) {
         if (initialized) return
         app = context.applicationContext
         initialized = true
+        // Возраст данных считается по монотонным часам, а не по календарю.
+        MonotonicClock.install { SystemClock.elapsedRealtime() }
         val profile = VehicleStore.load(app)
         val cached = ValueCache.load(app)
         _state.value = TelemetryState(
@@ -254,6 +268,44 @@ object Telemetry {
         engine?.setCatalogEnabled(enabled)
     }
 
+    /**
+     * Запасные источники показателей: запасной читается, только пока
+     * основной молчит. Соответствие строит приборка из [MetricSpec].
+     */
+    fun setFallbacks(map: Map<String, String>) {
+        fallbacks = map
+        engine?.setFallbacks(map)
+    }
+
+    /** Сводка производительности текущей (или последней) сессии. */
+    fun diagnosticsSnapshot(): TelemetryMetrics.Snapshot? =
+        (engine?.metrics ?: lastMetrics)?.snapshot(MonotonicClock.now())
+
+    /** Журнал опроса для экспорта. */
+    fun diagnosticsEvents(): List<TelemetryMetrics.Event> =
+        (engine?.metrics ?: lastMetrics)?.events().orEmpty()
+
+    /** Состояние очереди опроса: приоритеты, интервалы, отказы. */
+    fun scheduleSnapshot(): List<TelemetryScheduler.Snapshot> =
+        engine?.schedule().orEmpty()
+
+    /**
+     * Экспортирует журнал производительности в JSON и возвращает файл.
+     * Второй экземпляр диагностики не создаётся: это снимок того, что
+     * движок уже посчитал.
+     */
+    fun exportDiagnostics(context: Context): java.io.File? {
+        if (!initialized) return null
+        return TelemetryDiagnostics.export(
+            context = context,
+            source = engine?.sourceLabel ?: _state.value.connectionLabel,
+            connection = _state.value,
+            metrics = diagnosticsSnapshot(),
+            schedule = scheduleSnapshot(),
+            events = diagnosticsEvents(),
+        )
+    }
+
     /** Какие сигналы опрашивать, пока открыт каталог. */
     fun setCatalog(ids: Collection<String>) {
         engine?.setCatalog(ids)
@@ -340,6 +392,7 @@ object Telemetry {
     ) {
         valuesJob?.cancel()
         valuesJob = null
+        engine?.let { lastMetrics = it.metrics }
         engine?.stop()
         engine?.close()
         source = newSource
@@ -348,11 +401,12 @@ object Telemetry {
         newEngine.setDashboard(allWatched())
         newEngine.setBackground(profileWatched())
         newEngine.setCatalogEnabled(catalogEnabled)
+        newEngine.setFallbacks(fallbacks)
         valuesJob = scope.launch {
             newEngine.values.collect { values ->
                 if (values.isNotEmpty()) {
                     _state.update {
-                        it.copy(values = values, lastUpdateMs = System.currentTimeMillis())
+                        it.copy(values = values, lastUpdateMs = MonotonicClock.now())
                     }
                     ValueCache.save(app, values)
                 }

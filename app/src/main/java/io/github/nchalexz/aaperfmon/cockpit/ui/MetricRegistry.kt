@@ -1,11 +1,13 @@
 package io.github.nchalexz.aaperfmon.cockpit.ui
 
 import io.github.nchalexz.aaperfmon.cockpit.UiLanguage
-import io.github.nchalexz.aaperfmon.telemetry.ReadingState
+import io.github.nchalexz.aaperfmon.telemetry.GearLabel
 import io.github.nchalexz.aaperfmon.telemetry.SignalCatalog
 import io.github.nchalexz.aaperfmon.telemetry.SignalDefinition
+import io.github.nchalexz.aaperfmon.telemetry.SignalStatus
 import io.github.nchalexz.aaperfmon.telemetry.SignalValue
 import io.github.nchalexz.aaperfmon.telemetry.VagSignals
+import io.github.nchalexz.aaperfmon.telemetry.ValueDisplay
 import java.util.Locale
 
 /** Категории расширенного экрана. Не совпадают с SignalCategory: это ракурс показа. */
@@ -75,6 +77,9 @@ data class MetricSpec(
     val virtual: Boolean = false,
     /** Запасные источники, если основной не отвечает. */
     val alternatives: List<MetricSource> = emptyList(),
+    /** Передача показывается позицией селектора: P, R, N, 1…
+     */
+    val gear: Boolean = false,
 ) {
     val allSignalIds: List<String>
         get() = listOf(signalId) + alternatives.map { it.signalId }
@@ -90,6 +95,7 @@ data class MetricSpec(
     fun format(raw: Double?, factorOverride: Double = factor, decimalsOverride: Int = decimals): String {
         val value = raw?.let { display(it, factorOverride) } ?: return "—"
         if (value.isNaN() || value.isInfinite()) return "—"
+        if (gear) return GearLabel.of(value)
         val text = String.format(Locale.ROOT, "%.${decimalsOverride}f", value)
         // Европейская запятая как на макетах, независимо от системной локали.
         return text.replace('.', ',')
@@ -113,6 +119,10 @@ data class MetricSpec(
 /** Почему у значения нет числа. Это разные ситуации, и путать их нельзя. */
 enum class MetricState {
     OK,
+
+    /** Успешного чтения ещё не было в этой сессии: на экране N/A. */
+    NEVER_READ,
+
     WAITING,
     STALE,
     UNSUPPORTED,
@@ -133,6 +143,7 @@ data class MetricReading(
 
 fun MetricState.note(language: UiLanguage): String = when (this) {
     MetricState.OK -> ""
+    MetricState.NEVER_READ -> language.pick("not read yet", "нет данных")
     MetricState.WAITING -> language.pick("waiting", "ожидание")
     MetricState.STALE -> language.pick("stale", "устарело")
     MetricState.UNSUPPORTED -> language.pick("not supported", "не поддерживается")
@@ -143,10 +154,11 @@ fun MetricState.note(language: UiLanguage): String = when (this) {
 private fun rank(state: MetricState): Int = when (state) {
     MetricState.OK -> 0
     MetricState.STALE -> 1
-    MetricState.WAITING -> 2
-    MetricState.UNSUPPORTED -> 3
-    MetricState.ERROR -> 4
-    MetricState.OFFLINE -> 5
+    MetricState.NEVER_READ -> 2
+    MetricState.WAITING -> 3
+    MetricState.UNSUPPORTED -> 4
+    MetricState.ERROR -> 5
+    MetricState.OFFLINE -> 6
 }
 
 /**
@@ -171,12 +183,14 @@ fun readMetric(
     for (source in sources) {
         val definition = SignalCatalog.get(source.signalId) ?: continue
         val value = values[source.signalId]
+        // Состояние отображения определяется актуальностью, а не последней
+        // попыткой: одиночный таймаут не должен превращать число в прочерк.
+        val status = value?.statusAt(now, definition)
         val state = when {
             !canShowData -> MetricState.OFFLINE
-            value == null -> MetricState.WAITING
-            value.state == ReadingState.UNSUPPORTED -> MetricState.UNSUPPORTED
-            value.state == ReadingState.ERROR -> MetricState.ERROR
-            value.isStale(now, definition) -> MetricState.STALE
+            value == null -> MetricState.NEVER_READ
+            status == SignalStatus.NEVER_READ -> MetricState.NEVER_READ
+            status == SignalStatus.STALE -> MetricState.STALE
             else -> MetricState.OK
         }
         val raw = if (state == MetricState.OK) value?.value else null
@@ -185,11 +199,15 @@ fun readMetric(
             raw = raw,
             display = raw?.let { spec.display(it, source.factor) },
             state = state,
-            text = if (raw == null) "—" else spec.format(
-                raw,
-                source.factor,
-                source.decimals ?: spec.decimals,
-            ),
+            text = when {
+                raw != null -> spec.format(
+                    raw,
+                    source.factor,
+                    source.decimals ?: spec.decimals,
+                )
+                state == MetricState.NEVER_READ -> "N/A"
+                else -> "—"
+            },
         )
         if (state == MetricState.OK) return reading
         if (best == null || rank(state) < rank(best.state)) best = reading
@@ -198,8 +216,8 @@ fun readMetric(
         spec = spec,
         raw = null,
         display = null,
-        state = if (canShowData) MetricState.WAITING else MetricState.OFFLINE,
-        text = "—",
+        state = if (canShowData) MetricState.NEVER_READ else MetricState.OFFLINE,
+        text = if (canShowData) "N/A" else "—",
     )
 }
 
@@ -228,6 +246,7 @@ object MetricRegistry {
         critical: Double? = null,
         icon: GaugeIcon = GaugeIcon.NONE,
         alternatives: List<MetricSource> = emptyList(),
+        gear: Boolean = false,
     ): MetricSpec {
         val definition = requireNotNull(SignalCatalog.get(id)) { "Нет сигнала $id" }
         return MetricSpec(
@@ -246,6 +265,7 @@ object MetricRegistry {
             icon = icon,
             virtual = definition.protocol == io.github.nchalexz.aaperfmon.telemetry.Protocol.VIRTUAL,
             alternatives = alternatives,
+            gear = gear,
         )
     }
 
@@ -290,6 +310,7 @@ object MetricRegistry {
         SignalCatalog.Ids.GEAR, DisplayCategory.GEARBOX,
         "GEAR", "ПЕРЕДАЧА", "", "", 0,
         alternatives = listOf(MetricSource("vag.7e1.210f.gear")),
+        gear = true,
     )
     val fuelUse = metric(
         SignalCatalog.Ids.FUEL_L100, DisplayCategory.FUEL,
@@ -563,6 +584,7 @@ object MetricRegistry {
             scaleMin = definition.minValue ?: 0.0,
             scaleMax = definition.maxValue ?: 1.0,
             virtual = false,
+            gear = definition.display == ValueDisplay.GEAR,
         )
     }
 

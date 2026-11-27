@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Version 0.5.1" src="https://img.shields.io/badge/version-0.5.1-E5484D?style=flat-square"></a>
+  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Version 0.6.0" src="https://img.shields.io/badge/version-0.6.0-E5484D?style=flat-square"></a>
   <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/license-MIT-38BDF8?style=flat-square"></a>
   <a href="#install"><img alt="Android 7.0+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white"></a>
   <a href="build.gradle.kts"><img alt="Kotlin 2.2" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?style=flat-square&logo=kotlin&logoColor=white"></a>
@@ -32,22 +32,23 @@
 </p>
 
 > [!WARNING]
-> **0.5.1 is a test build, not a verified release.**
-> It runs on an Android 15 emulator and was checked against a live **ELM327 v1.5** (Bluetooth on the
-> host, bridged to the emulator). The phone's own Bluetooth stack, an Android Auto head unit and a
-> driving session are still untested. See [What is tested](#what-is-tested-what-is-not).
+> **0.6.0 is a test build, not a verified release.**
+> The new polling core is covered by 98 JVM tests, but 0.6.0 has not been run against a live
+> ELM327, a phone or a car. The last live check (0.5.1) covered the previous scheduling core only.
+> See [What is tested](#what-is-tested-what-is-not).
 
 > [!NOTE]
-> 0.5.1 fixes the dead end where connecting on the diagnostics screen left the dashboard in Demo:
-> the adapter is now shared with telemetry. The dashboard signals were redistributed. A live
-> ELM327 v1.5 answered OBD PIDs and one VAG DID; a real phone and head unit are still untested.
+> 0.6.0 replaces ad-hoc polling with one priority scheduler: P0 (rpm, speed, boost, oil, coolant)
+> first, adaptive intervals from measured latency, exponential backoff for silent parameters, and
+> explicit `VALID`/`STALE`/`NEVER_READ` states. Values no longer vanish on a single timeout, gear
+> shows P/R/N, and a JSON performance journal can be exported from Settings.
 
 > [!NOTE]
-> **По-русски.** 0.5.1 — тестовая сборка: приборка, виджет и отдельная AA-сборка. Проверена на
-> эмуляторе Android 15 и на живом ELM327 v1.5 (Bluetooth на хосте, мост в эмулятор); на реальном
-> телефоне, головном устройстве и в поездке — нет. Сборки `standard` и `aa` используют один
-> `applicationId`, поэтому ставьте только одну. Полный перевод —
-> [README.ru.md](README.ru.md).
+> **По-русски.** 0.6.0 — тестовая сборка: единый планировщик опроса, состояния
+> `VALID`/`STALE`/`NEVER_READ`, P/R/N у передачи и экспорт журнала производительности.
+> Новое ядро проверено 98 JVM-тестами; на живом ELM327 и на автомобиле 0.6.0 ещё
+> не запускалась. Сборки `standard` и `aa` используют один `applicationId`,
+> поэтому ставьте только одну. Полный перевод — [README.ru.md](README.ru.md).
 
 ## What this is
 
@@ -120,10 +121,10 @@ More: [docs/AA.md](docs/AA.md) and [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md
 ## One telemetry — three surfaces
 
 <p align="center">
-  <img src="docs/assets/surfaces.svg" alt="0.5.1 mockup of three surfaces: dashboard, widget and Android Auto" width="100%">
+  <img src="docs/assets/surfaces.svg" alt="0.6.0 mockup of three surfaces: dashboard, widget and Android Auto" width="100%">
 </p>
 
-<p align="center"><sub>A 0.5.1 mockup, not screenshots: the dashboard, widget and car screen read one state.</sub></p>
+<p align="center"><sub>A mockup, not screenshots: the dashboard, widget and car screen read one state.</sub></p>
 
 | Surface | What it shows | Connection |
 |---|---|---|
@@ -141,10 +142,16 @@ owns its own `Elm327`, so the two should not scan at the same time.
 
 - 129 signals: 41 standard OBD-II PIDs, 4 calculated values, 1 virtual signal and 83 VAG-specific
   UDS `22 <DID>` signals for MQB TDI.
-- Subscription engine with fair polling for mixed OBD/UDS, adaptive rates, exponential backoff and
-  data-age tracking.
+- One adaptive scheduler: per-parameter interval, P0/P1/P2 priorities, one adapter transaction at a
+  time, same-ECU grouping, DID batching only after a successful probe, adaptive intervals from
+  measured latency, exponential backoff and periodic rechecks for silent parameters.
+- Freshness states from the spec: `VALID` shows the number, `STALE` shows “—” after 5 s (P0/P1) or
+  30 s (P2), `NEVER_READ` shows `N/A`. One timeout keeps the last good value; zero stays a value.
 - Calculated torque, power, boost and instant l/100 km. They become “no data” when inputs are
   missing; consumption is undefined at standstill instead of infinite.
+- Performance metrics: per-signal update rate, average and P95 latency, requests per second,
+  success rate, timeouts, ECU switches, value age, stale transitions and queue depth, with a JSON
+  export from Settings. No VIN is written.
 - One process-wide repository: dashboard, widget and car screen read the same `StateFlow`.
 - Last-value cache, saved adapter and auto-connect on app start.
 
@@ -156,14 +163,17 @@ owns its own `Elm327`, so the two should not scan at the same time.
   the reference mockups.
 - Day and night themes with separate tokens; Auto follows the system, with a manual override.
 - English and Russian labels. English by default; Russian on a Russian system; manual override.
-- Unsupported, stale or missing values show “—” and a status dot, never a zero.
+- Unsupported, stale or never-read values show “—”, `N/A` and a status dot, never a zero.
+- Gear is a selector position: P, R, N, 1… (the −2 offset comes from the open OBDb set and is not
+  yet confirmed on a car).
 - Demo Mode starts on the mockup values (86 °C, 0.62 bar, 95 °C, 96 km/h, 1840 rpm, gear 5, 48 %,
   21 %, 19 %, 162 kPa, 100 kPa, 42.5 g/s, 14.6 V, 58 %) and is always marked **DEMO**.
 
 **VAG-specific data**
 
 - UDS `22 <DID>` reader over ELM327 with per-module headers, 11-bit CAN, flow-control retries and a
-  short per-DID cache; the next OBD request returns to header `7DF`.
+  short per-DID cache; the next OBD request returns to header `7DF`. Same-block DIDs are requested
+  together only after the block accepts a probe; otherwise the reader falls back to single reads.
 - 83 signals derived from the open **OBDb/Audi-Q3** set (CC BY-SA 4.0, commit `b51e835`): boost
   actual/specified, rail pressure, injection deviations, DSG oil and clutch temperatures, clutch
   pressures, DPF soot, exhaust temperatures, battery sensor and engine/cluster oil temperature.
@@ -202,9 +212,11 @@ owns its own `Elm327`, so the two should not scan at the same time.
 
 **Verification**
 
-- 61 JVM tests: decoding, UDS bit fields, catalog integrity, payload parsing, polling schedule,
-  backoff, staleness, fuel consumption, demo-model consistency and the read-only bridge snapshot.
-- A fake ELM327 transport test covers OBD→UDS header switching and negative UDS answers.
+- 98 JVM tests: decoding, UDS bit fields, catalog integrity, payload parsing, scheduler priority,
+  fairness, backoff, DID batching, 5/30 s staleness, recovery, zero values, connection loss, slow
+  adapter, queue overload, multiple subscribers, metrics and the read-only bridge snapshot.
+- A fake ELM327 transport test covers OBD→UDS header switching, negative UDS answers and the
+  two-DID batch probe.
 - Demo mode opens every screen without an adapter or a car.
 - Dashboard, Extended Dashboard, catalog, settings, themes and languages were checked on an
   Android 15 emulator at 1920×720. The real car, phone and head unit were not.
@@ -215,8 +227,8 @@ The two builds share one `applicationId` and **replace each other** when install
 
 | Build | What is inside | Size |
 |---|---|---|
-| `standard` | Dashboard, widget, diagnostics; no Android Auto. | ≈18.8 MB |
-| `aa` | The same plus Android Auto (Car App Library). | ≈20.1 MB |
+| `standard` | Dashboard, widget, diagnostics; no Android Auto. | ≈18.9 MB |
+| `aa` | The same plus Android Auto (Car App Library). | ≈20.2 MB |
 
 Requirements: Android 7.0+ (API 24), an ELM327 over Wi-Fi, Bluetooth SPP or USB serial, and network,
 Bluetooth, USB-host and notification permissions. Google Mobile Services are not required.
@@ -229,19 +241,18 @@ Through `adb`:
 
 ```sh
 # standard build
-adb install -r VAG-Performance-Monitor-0.5.1-standard.apk
+adb install -r VAG-Performance-Monitor-0.6.0-standard.apk
 
 # Android Auto build
-adb install -r VAG-Performance-Monitor-0.5.1-AA.apk
+adb install -r VAG-Performance-Monitor-0.6.0-AA.apk
 ```
 
 <details>
 <summary>SHA-256 and signing certificate</summary>
 
 ```text
-758b17dd40bb9e07a626a060d7884935373b435aabe37b3e58ffe991ce2b5a7c  VAG-Performance-Monitor-0.5.1-standard.apk
-c6733c220db101ebf98c9f90da1b8c021dbb976c3abe71f69f17b3ed76c679ad  VAG-Performance-Monitor-0.5.1-AA.apk
-certificate SHA-256: 0711f56b72945a1c10a69dde98dc0fc11bb9a74f3eafb6fa235b7db54c63e170
+SHA-256: see SHA256SUMS.txt on the release page
+certificate SHA-256: see the same release page
 ```
 
 The APKs are signed with the Android Debug key (`CN=Android Debug`). Check with
@@ -251,9 +262,9 @@ The APKs are signed with the Android Debug key (`CN=Android Debug`). Check with
 
 > [!NOTE]
 > These are debug builds signed with `CN=Android Debug`; each CI build uses a fresh debug key, so the
-> certificate differs from 0.5.0's. Updating from 0.5.0 or 0.4.1 needs an uninstall first (app
-> settings are lost). The two builds cannot be installed at the same time, and a switch to a release
-> signature will also need an uninstall.
+> certificate differs from 0.5.1's. Updating from 0.5.1 may need an uninstall first (app settings are
+> lost). The two builds cannot be installed at the same time, and a switch to a release signature
+> will also need an uninstall.
 
 ## Quick start
 
@@ -293,7 +304,10 @@ bug.
 |---|---|---|
 | `standard` debug build | `./gradlew :app:assembleStandardDebug` | **yes** |
 | `aa` debug build | `./gradlew :app:assembleAaDebug` | **yes** |
-| 66 JVM tests | `./gradlew :app:testStandardDebugUnitTest` | **yes** |
+| 98 JVM tests | `./gradlew :app:testStandardDebugUnitTest` | **yes** |
+| Scheduler priority, fairness, backoff, DID batching | `TelemetrySchedulerTest`, `Elm327UdsSourceTest` | **yes** |
+| Freshness 5/30 s, N/A, zero, recovery, connection loss, slow adapter, queue overload | `TelemetryEngineScenarioTest` | **yes** |
+| 0.6.0 on a live adapter or a car | hardware | **no** |
 | Android 15 emulator: Dashboard, Extended, catalog, settings, themes/language, LIVE via ELM327 stub | emulator | **yes** |
 | VAG UDS decode and OBD/UDS header switching | fake ELM327 transport, JVM test | **yes** |
 | Widget placed and configured | Android 15 emulator launcher | **yes** |
@@ -309,7 +323,8 @@ bug.
 
 Unit tests, emulator runs and renders are **not** compatibility proof. The catalog has 128 signals
 marked “decoded” and one “described”; on a live ELM327 one standard-PID set and a single VAG DID
-(oil temperature) answered, the rest are still unconfirmed. The exact open points are in
+(oil temperature) answered, the rest are still unconfirmed. 0.6.0 changed the polling core, so those
+live results do not transfer to it; the scheduler must be measured on the adapter. The exact open points are in
 [TEST_PLAN.md](TEST_PLAN.md) and [COMPATIBILITY.md](COMPATIBILITY.md).
 
 ## Build
@@ -363,21 +378,27 @@ CockpitActivity     AppWidget     CarAppService (aa)     SettingsActivity
         └──────────────┴───────────────┴──────────────────┘
                  Telemetry (singleton, StateFlow)
                               │
-                       TelemetryEngine  ──►  SignalCatalog
+            TelemetryEngine ── TelemetryScheduler ── TelemetryMetrics
                               │
                        SignalSource
                        ├── DemoSignalSource   — no car required
                        └── Elm327SignalSource — OBD-II mode 01 and UDS 22 <DID>
                               │
                            Elm327  ──►  Transport (Wi-Fi / Bluetooth / USB)
+                              ▲
+                          AdapterBus  — one logical operation on the bus
+                              ▲
+                    Diagnostics (scan, faults, live data)
 ```
 
 `Telemetry` is the only owner of the telemetry connection and engine. Every surface subscribes to its
 state and never opens a second telemetry session. `TelemetryService` runs alongside it for the
 foreground status, notification and widget refresh.
 
-The VAG Diag screen keeps its own `Elm327` and is outside this tree. Commands are serialized inside
-one adapter object, but the two connections can still compete for the bus.
+The VAG Diag screen shares the same `Elm327` when telemetry is live. `AdapterBus` gives each logical
+operation — one telemetry poll, a block scan, a fault read — exclusive use of the bus, so commands do
+not interleave and headers are not overwritten mid-scan. While a diagnostic scan holds the bus,
+telemetry pauses and its values age into “—”.
 
 The catalog knows nothing about the engine, the engine knows nothing about Android, and the UI knows
 nothing about the transport. That is why decoding and polling can be tested with plain JVM tests.
@@ -404,7 +425,9 @@ is confirmed on a car. See [SIGNAL_CATALOG.md](SIGNAL_CATALOG.md) and
 
 ## Limitations
 
-- No hardware verification: no real phone, car, head unit or live Bluetooth/USB adapter.
+- No hardware verification of 0.6.0: no live ELM327 run, phone, car or head unit with this build.
+  The scheduler's target rates are **not** claimed as reached; measure them with the exported
+  journal.
 - Android Auto is a template list only. Google Play publication needs a host allowlist and category
   review; sideloading and AARE use `ALLOW_ALL_HOSTS_VALIDATOR`.
 - AARE/DashGrid: the read-only bridge (contract v1) is in 0.5.1 and was verified with DashGrid
@@ -413,6 +436,11 @@ is confirmed on a car. See [SIGNAL_CATALOG.md](SIGNAL_CATALOG.md) and
 - Profiles are manual; there is no VIN-based selection.
 - VAG DIDs come from one open Audi-Q3 set. They are decoded, not confirmed on an MQB TDI; some
   blocks will refuse a DID or answer only after `10 03`, which this app does not send.
+- Gear P/R/N comes from the OBDb −2 offset and is not yet confirmed on a car; an unsupported DID
+  may also report the selector differently.
+- DID batching is enabled per block only after a probe; a block that accepts the probe but returns
+  an unusual layout will be detected and fall back to single reads, at the cost of one failed
+  request.
 - Only `22` reads and `3E` keep-alive are sent. There is no ODX/VCDS import, no session change,
   no coding or adaptation, and no DPF regeneration.
 - No trip recording, history, graphs or export.
@@ -420,7 +448,8 @@ is confirmed on a car. See [SIGNAL_CATALOG.md](SIGNAL_CATALOG.md) and
 - No KWP2000 or TP2.0; BLE adapters are not supported.
 - No automatic reconnect after a drop; auto-connect works at app start only.
 - The `standard` and `aa` builds share one `applicationId` and cannot be installed together.
-- Diagnostics opens its own adapter connection; do not scan modules while telemetry is running.
+- Diagnostics shares the adapter and holds it during a scan; telemetry pauses until the scan ends.
+- The performance journal is exported manually from Settings; there is no continuous recording.
 
 The next versions and priorities are in [ROADMAP.md](ROADMAP.md) and [BACKLOG.md](BACKLOG.md).
 
@@ -433,6 +462,10 @@ automatically.
 Network access is used only for the Wi-Fi adapter. Vehicle data is not sent to third-party services;
 there are no analytics, trackers or crash reporters. The foreground service shows a persistent
 notification and does not hide its work.
+
+Settings can export a telemetry performance journal (signal ids, timing, counters) as JSON through
+the system share sheet. It is written to a cache subdirectory exposed narrowly by `FileProvider`;
+it contains no VIN, location or block memory, and nothing is uploaded automatically.
 
 The `aa` build uses `HostValidator.ALLOW_ALL_HOSTS_VALIDATOR` for sideloading and AARE. A Google Play
 release would need a host allowlist. More: [SECURITY.md](SECURITY.md).
@@ -455,7 +488,10 @@ release would need a host allowlist. More: [SECURITY.md](SECURITY.md).
 | [docs/AA.md](docs/AA.md) | Android Auto build, templates and testing |
 | [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md) | Widget hosting and the read-only telemetry bridge |
 | [docs/SPEC.md](docs/SPEC.md) | Full technical specification |
+| [docs/TELEMETRY_OPTIMIZATION.md](docs/TELEMETRY_OPTIMIZATION.md) | The 0.6.0 scheduling spec and its implementation report |
+| [docs/TELEMETRY_OPTIMIZATION_REPORT.md](docs/TELEMETRY_OPTIMIZATION_REPORT.md) | What changed, test results, how to measure on a real adapter |
 | [CHANGELOG.md](CHANGELOG.md) | Change history |
+| [docs/releases/0.6.0.md](docs/releases/0.6.0.md) | 0.6.0 release notes |
 | [docs/releases/0.5.1.md](docs/releases/0.5.1.md) | 0.5.1 release notes |
 | [docs/releases/0.4.1.md](docs/releases/0.4.1.md) | 0.4.1 release notes |
 | [docs/releases/0.4.0.md](docs/releases/0.4.0.md) | 0.4.0 release notes |
