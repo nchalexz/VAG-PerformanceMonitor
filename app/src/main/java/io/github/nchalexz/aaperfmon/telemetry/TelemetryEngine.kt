@@ -250,13 +250,17 @@ class TelemetryEngine(
             }
             val previous = snapshot[definition.id]
             if (!usable) {
-                if (previous != null && previous.value == null &&
-                    previous.state == ReadingState.UNSUPPORTED
+                // Последнее посчитанное число сохраняется: если входы
+                // устарели, на экране остаётся серое значение, а не прочерк.
+                // Прочерк — только если расчёт не давал числа ни разу.
+                val lastValue = previous?.value
+                if (previous == null || (lastValue == null &&
+                        previous.state == ReadingState.UNSUPPORTED)
                 ) {
-                    continue
+                    if (previous != null) continue
                 }
                 updates[definition.id] = SignalValue(
-                    value = null,
+                    value = lastValue,
                     timestampMs = previous?.timestampMs ?: 0L,
                     state = ReadingState.UNSUPPORTED,
                     sourceLabel = "расчёт",
@@ -277,13 +281,16 @@ class TelemetryEngine(
                 ComputedKind.FUEL_L100 -> if (b < 3.0) null else a / b * 100.0
             }
             if (value == null) {
-                if (previous != null && previous.value == null &&
+                // Например, расход на стоянке: новое число не определено,
+                // но последнее известное остаётся серым, пока не устареет.
+                val lastValue = previous?.value
+                if (previous != null && lastValue == null &&
                     previous.state == ReadingState.UNSUPPORTED
                 ) {
                     continue
                 }
                 updates[definition.id] = SignalValue(
-                    value = null,
+                    value = lastValue,
                     timestampMs = previous?.timestampMs ?: 0L,
                     state = ReadingState.UNSUPPORTED,
                     sourceLabel = "расчёт",

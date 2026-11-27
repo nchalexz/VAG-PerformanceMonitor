@@ -49,7 +49,7 @@ class TelemetrySchedulerTest {
         val snapshot = scheduler.snapshot(SignalCatalog.Ids.RPM)!!
         assertEquals(SignalPriority.P0, snapshot.priority)
         // Фоновый минимум интервала не должен применяться к экрану.
-        assertEquals(100L, snapshot.effectiveIntervalMs)
+        assertEquals(500L, snapshot.effectiveIntervalMs)
     }
 
     @Test
@@ -138,9 +138,9 @@ class TelemetrySchedulerTest {
         scheduler.record(SignalCatalog.Ids.RPM, ReadingState.OK, 200L, now)
         val snapshot = scheduler.snapshot(SignalCatalog.Ids.RPM)!!
         assertEquals(0, snapshot.consecutiveFailures)
-        // Интервал учитывает фактическую задержку ответа (200 мс × 1,15).
-        assertEquals(230L, snapshot.effectiveIntervalMs)
-        assertEquals(1_230L, scheduler.nextAttemptAt(SignalCatalog.Ids.RPM))
+        // Целевой интервал оборотов теперь 2 Гц, задержка 200 мс его не растягивает.
+        assertEquals(500L, snapshot.effectiveIntervalMs)
+        assertEquals(1_500L, scheduler.nextAttemptAt(SignalCatalog.Ids.RPM))
     }
 
     @Test
@@ -183,10 +183,34 @@ class TelemetrySchedulerTest {
             scheduler.record(SignalCatalog.Ids.RPM, ReadingState.OK, 150L, t)
             t += 100L
         }
-        now = 6_100L
-        // P2 ждёт больше шести секунд: его очередь наступает, хотя P0
-        // всегда готов к опросу.
+        now = 9_200L
+        // P2 ждёт больше девяти секунд: его очередь наступает, хотя
+        // быстрая полоса (обороты) всегда готова к опросу.
         assertEquals(SignalCatalog.Ids.FUEL_LEVEL, scheduler.nextDue(now)!!.id)
+    }
+
+    @Test
+    fun `boost input gets the fast lane under load`() {
+        val scheduler = scheduler()
+        scheduler.setDemand(
+            listOf(
+                TelemetryScheduler.Demand(SignalCatalog.Ids.RPM),
+                TelemetryScheduler.Demand(SignalCatalog.Ids.SPEED),
+                TelemetryScheduler.Demand(SignalCatalog.Ids.MAP),
+                TelemetryScheduler.Demand(SignalCatalog.Ids.COOLANT),
+            ),
+        )
+        val counts = mutableMapOf<String, Int>()
+        var t = 0L
+        repeat(60) {
+            val definition = scheduler.nextDueBatch(t).firstOrNull() ?: return@repeat
+            counts[definition.id] = (counts[definition.id] ?: 0) + 1
+            scheduler.record(definition.id, ReadingState.OK, 100L, t)
+            t += 100L
+        }
+        val fast = counts[SignalCatalog.Ids.MAP] ?: 0
+        val slow = counts[SignalCatalog.Ids.RPM] ?: 0
+        assertTrue("Быстрая полоса не работает: $counts", fast > slow)
     }
 
     @Test
@@ -239,7 +263,7 @@ class TelemetrySchedulerTest {
         scheduler.record(SignalCatalog.Ids.SPEED, ReadingState.OK, 100L, now)
         assertEquals(0, scheduler.queueDepth(now))
 
-        now = 200L
+        now = 600L
         assertEquals(2, scheduler.queueDepth(now))
     }
 }

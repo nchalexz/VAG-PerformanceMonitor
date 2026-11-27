@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import io.github.nchalexz.aaperfmon.core.*
 import io.github.nchalexz.aaperfmon.telemetry.AdapterConfig
+import io.github.nchalexz.aaperfmon.telemetry.AdapterStore
 import io.github.nchalexz.aaperfmon.telemetry.ConnectionKind
 import io.github.nchalexz.aaperfmon.telemetry.Telemetry
 import kotlin.coroutines.resume
@@ -199,6 +200,9 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun connectWifi(host: String, port: Int) = run("Подключение") {
+        // Выбор запоминается до попытки: даже неудачное подключение
+        // не должно заставлять вводить адрес заново.
+        AdapterStore.remember(getApplication(), AdapterConfig.Wifi(host, port))
         openTransport(WifiTransport(host, port))
     }
 
@@ -237,6 +241,10 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
             say("Устройство отключено, обновите список")
             return@run
         }
+        val displayName = _state.value.usbDevices.firstOrNull { it.first == deviceName }?.second
+            ?: runCatching { device.productName }.getOrNull()
+            ?: "USB"
+        AdapterStore.remember(getApplication(), AdapterConfig.Usb(deviceName, displayName))
         // Разрешение спрашивается один раз на устройство. Если приложение
         // открылось само при подключении адаптера, оно уже выдано.
         if (!manager.hasPermission(device)) {
@@ -290,6 +298,10 @@ class DiagViewModel(application: Application) : AndroidViewModel(application) {
             say("Устройство не найдено")
             return@run
         }
+        val name = _state.value.bondedDevices.firstOrNull { it.first == address }?.second
+            ?: runCatching { device.name }.getOrNull()
+            ?: address
+        AdapterStore.remember(getApplication(), AdapterConfig.Bluetooth(address, name))
         openTransport(BluetoothTransport(device))
     }
 

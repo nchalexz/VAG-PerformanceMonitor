@@ -109,14 +109,23 @@ fun CircularGauge(
             LaunchedEffect(reading.fraction) {
                 reading.fraction?.let { lastFraction = it }
             }
-            val target = if (reading.isOk) (reading.fraction ?: lastFraction) else lastFraction
+            // Устаревшее значение остаётся на шкале, но стрелка гаснет:
+            // видно и число, и то, что оно уже не свежее.
+            val hasValue = reading.isOk || reading.stale
+            val target = if (hasValue) (reading.fraction ?: lastFraction) else lastFraction
+            // Короткий переход: стрелка должна успевать за педалью, а не
+            // догонять её через полсекунды после следующего отсчёта.
             val needle by animateFloatAsState(
                 targetValue = target,
-                animationSpec = tween(durationMillis = 150, easing = LinearEasing),
+                animationSpec = tween(durationMillis = 90, easing = LinearEasing),
                 label = "needle",
             )
             val needleAlpha by animateFloatAsState(
-                targetValue = if (reading.isOk) 1f else 0f,
+                targetValue = when {
+                    reading.isOk -> 1f
+                    reading.stale -> 0.30f
+                    else -> 0f
+                },
                 animationSpec = tween(durationMillis = 200),
                 label = "needle-alpha",
             )
@@ -182,9 +191,11 @@ private fun DrawScope.drawValue(
     if (text.isBlank()) return
 
     val color = when {
+        // Устаревшее число остаётся читаемым, а на устаревание указывает
+        // красный кружок в углу. Прочерк — только если числа не было вовсе.
+        !reading.isOk && !reading.stale -> colors.dim
         reading.spec.criticalValue(reading.display) -> colors.critical
         reading.spec.warningValue(reading.display) -> colors.warning
-        !reading.isOk -> colors.text.copy(alpha = 0.55f)
         else -> colors.text
     }
     paint.color = color.toArgb()
@@ -212,10 +223,10 @@ private fun gaugeDescription(
     val label = spec.label(language).lowercase()
     val unit = spec.unit(language)
     val note = reading.state.note(language)
-    return if (reading.isOk) {
-        "$label ${reading.text} $unit".trim()
-    } else {
-        "$label — $note".trim()
+    return when {
+        reading.isOk -> "$label ${reading.text} $unit".trim()
+        reading.stale -> "$label ${reading.text} $unit, $note".trim()
+        else -> "$label — $note".trim()
     }
 }
 
@@ -345,7 +356,13 @@ fun MetricTile(
                 contentDescription = buildString {
                     append(spec.label(language))
                     append(": ")
-                    append(if (reading.isOk) "${reading.text} ${spec.unit(language)}" else note)
+                    append(
+                        if (reading.isOk || reading.stale) {
+                            "${reading.text} ${spec.unit(language)} ${note}".trim()
+                        } else {
+                            note
+                        },
+                    )
                 }
             },
     ) {
@@ -373,9 +390,10 @@ fun MetricTile(
                     Text(
                         reading.text,
                         color = when {
+                            reading.stale -> colors.text
+                            !reading.isOk -> colors.dim
                             spec.criticalValue(reading.display) -> colors.critical
                             spec.warningValue(reading.display) -> colors.warning
-                            !reading.isOk -> colors.dim
                             else -> colors.text
                         },
                         fontFamily = DashboardFont,
@@ -407,7 +425,7 @@ fun MetricTile(
             val dotColor = when (reading.state) {
                 MetricState.WAITING -> colors.dim
                 MetricState.NEVER_READ -> colors.tick
-                MetricState.STALE -> colors.warning
+                MetricState.STALE -> colors.critical
                 MetricState.UNSUPPORTED -> colors.tick
                 MetricState.ERROR, MetricState.OFFLINE -> colors.critical
                 MetricState.OK -> Color.Transparent

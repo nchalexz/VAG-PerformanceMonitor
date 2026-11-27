@@ -19,11 +19,17 @@ class MetricRegistryTest {
     @Test
     fun `gauges show fast values and tiles show slow ones`() {
         assertEquals(
-            listOf("engine.rpm", "vehicle.speed", "engine.boost_kpa"),
+            listOf("engine.coolant_c", "engine.map_kpa", "engine.oil_c"),
             MetricRegistry.gauges.map { it.signalId },
         )
         assertEquals(
-            listOf("engine.coolant_c", "engine.oil_c", "vehicle.gear", "fuel.l100_km", "fuel.level_pct"),
+            listOf(
+                "vag.7e1.2104.atf_temp",
+                "engine.intake_air_c",
+                "vag.7e0.10fb.egt1",
+                "electrical.voltage_v",
+                "fuel.rail_kpa",
+            ),
             MetricRegistry.mainTiles.map { it.signalId },
         )
     }
@@ -38,6 +44,8 @@ class MetricRegistryTest {
     @Test
     fun `boost is shown in bar with a european comma`() {
         assertEquals("0,62", MetricRegistry.boost.format(62.0))
+        // Шкала турбины показывает абсолютное давление, как консоль машины.
+        assertEquals("0,98", MetricRegistry.chargePressure.format(98.0))
         assertEquals("1,90", MetricRegistry.boost.format(190.0))
     }
 
@@ -55,9 +63,9 @@ class MetricRegistryTest {
     @Test
     fun `oil gauge reports no data instead of zero`() {
         val reading = readMetric(MetricRegistry.oil, emptyMap(), 1_000L, canShowData = true)
-        // Нет ни одного успешного чтения — это N/A, а не прочерк.
+        // Нет ни одного успешного чтения — прочерк.
         assertEquals(MetricState.NEVER_READ, reading.state)
-        assertEquals("N/A", reading.text)
+        assertEquals("—", reading.text)
     }
 
     @Test
@@ -77,6 +85,33 @@ class MetricRegistryTest {
         assertEquals("N", text(0.0))
         assertEquals("5", text(5.0))
         assertEquals("—", text(99.0))
+    }
+
+    @Test
+    fun `stale value keeps its number instead of a dash`() {
+        val now = 20_000L
+        val values = mapOf(
+            "engine.coolant_c" to SignalValue(86.0, now - 310_000, ReadingState.OK, "тест"),
+        )
+        val reading = readMetric(MetricRegistry.coolant, values, now, canShowData = true)
+
+        assertEquals(MetricState.STALE, reading.state)
+        assertEquals(86.0, reading.raw!!, 0.001)
+        assertEquals("86", reading.text)
+        assertTrue(reading.stale)
+    }
+
+    @Test
+    fun `fresh alternative wins over a stale primary`() {
+        val now = 20_000L
+        val values = mapOf(
+            "engine.oil_c" to SignalValue(80.0, now - 310_000, ReadingState.OK, "тест"),
+            "vag.7e0.11be.oil_temp" to SignalValue(95.0, now, ReadingState.OK, "тест"),
+        )
+        val reading = readMetric(MetricRegistry.oil, values, now, canShowData = true)
+
+        assertEquals(MetricState.OK, reading.state)
+        assertEquals("95", reading.text)
     }
 
     @Test

@@ -160,13 +160,13 @@ data class UdsValueSpec(
  */
 enum class SignalPriority(val staleTimeoutMs: Long) {
     /** Обороты, скорость, наддув, температура масла и ОЖ. */
-    P0(5_000L),
+    P0(20_000L),
 
     /** Момент, мощность, передача, педаль, давление топлива. */
-    P1(5_000L),
+    P1(60_000L),
 
     /** Остальные диагностические параметры и редкие температуры. */
-    P2(30_000L),
+    P2(300_000L),
 }
 
 /** Как показывать последнее известное значение. */
@@ -278,8 +278,21 @@ data class SignalDefinition(
     val pollHz: Double = 1.0,
     /** Приоритет очереди опроса и срок актуальности значения. */
     val priority: SignalPriority = SignalPriority.P2,
+    /**
+     * Свой срок актуальности. Нужен там, где приоритет и скорость изменения
+     * не совпадают: ОЖ и масло важны (P0/P1), но меняются за минуты, а
+     * уровень топлива — ещё медленнее. null — взять срок из приоритета.
+     */
+    val staleMs: Long? = null,
     /** Как рисовать значение: число или позиция селектора. */
     val display: ValueDisplay = ValueDisplay.NUMBER,
+    /**
+     * «Быстрая полоса»: обороты и скорость. Они опрашиваются первыми,
+     * потому что меняются каждую секунду и от них зависит ощущение живости
+     * приборки. Очередь при этом не забивается ими навсегда: остальные
+     * параметры поднимаются по возрасту.
+     */
+    val fast: Boolean = false,
     val source: String = "",
     val verification: Verification = Verification.DESCRIBED,
     val note: String = "",
@@ -290,10 +303,10 @@ data class SignalDefinition(
 
     /** Интервал опроса в миллисекундах, но не чаще одного раза в 100 мс. */
     val intervalMs: Long
-        get() = (1000.0 / pollHz.coerceIn(0.05, 20.0)).toLong().coerceAtLeast(100L)
+        get() = (1000.0 / pollHz.coerceIn(0.05, 20.0)).toLong().coerceAtLeast(60L)
 
-    /** Сколько значение остаётся актуальным: 5 с для P0/P1, 30 с для P2. */
-    val staleTimeoutMs: Long get() = priority.staleTimeoutMs
+    /** Сколько значение остаётся актуальным. */
+    val staleTimeoutMs: Long get() = staleMs ?: priority.staleTimeoutMs
 
     /** Текст запроса для журнала и документации. */
     val requestHex: String

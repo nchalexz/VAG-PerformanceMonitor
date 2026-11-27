@@ -108,20 +108,20 @@ object WidgetPublisher {
         views.setTextViewText(slotUnit(index), definition.unit)
 
         val status = value?.statusAt(now, definition) ?: SignalStatus.NEVER_READ
-        val number = if (status == SignalStatus.VALID) value?.value else null
+        // Устаревшее значение остаётся числом, только приглушённым:
+        // прочерк — признак того, что параметр не прочитан ни разу.
+        val number = if (status == SignalStatus.VALID || status == SignalStatus.STALE) {
+            value?.value
+        } else {
+            null
+        }
         views.setTextViewText(
             slotValue(index),
-            when {
-                number != null -> definition.format(number)
-                // Виджет живёт вне приложения: N/A здесь означает, что
-                // параметр ещё ни разу не прочитан, а не что он «сломан».
-                status == SignalStatus.NEVER_READ -> "N/A"
-                else -> "—"
-            },
+            if (number == null) "—" else definition.format(number),
         )
         views.setTextColor(
             slotValue(index),
-            if (number == null) {
+            if (number == null || status == SignalStatus.STALE) {
                 ContextCompat.getColor(context, R.color.widget_dim)
             } else if (isWarning(definition, number)) {
                 ContextCompat.getColor(context, R.color.widget_warn)

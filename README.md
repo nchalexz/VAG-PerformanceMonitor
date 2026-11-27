@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Version 0.6.1" src="https://img.shields.io/badge/version-0.6.1-E5484D?style=flat-square"></a>
+  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Version 0.6.2" src="https://img.shields.io/badge/version-0.6.2-E5484D?style=flat-square"></a>
   <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/license-MIT-38BDF8?style=flat-square"></a>
   <a href="#install"><img alt="Android 7.0+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white"></a>
   <a href="build.gradle.kts"><img alt="Kotlin 2.2" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?style=flat-square&logo=kotlin&logoColor=white"></a>
@@ -32,25 +32,27 @@
 </p>
 
 > [!WARNING]
-> **0.6.1 is a test build, not a verified release.**
-> The polling core is covered by 100 JVM tests and 0.6.0 was run on a real phone against a mock
-> ELM327 over Wi-Fi, but neither build has been run against a live car adapter or a car. See
-> [What is tested](#what-is-tested-what-is-not).
+> **0.6.2 is a test build, not a verified release.**
+> 0.6.2 was connected to a real car through a Bluetooth **OBDII** adapter: idle 770 rpm, 0 km/h,
+> coolant 78 °C, oil 84 °C, absolute boost 0.98 bar, DSG 73 °C, intake 42 °C, EGT 152 °C,
+> 14.4 V, rail 314 bar. Driving, a phone call, Android Auto and a head unit are still untested.
+> See [What is tested](#what-is-tested-what-is-not).
 
 > [!NOTE]
-> 0.6.1 keeps the chosen adapter across app restarts and loads the device list only when you ask
-> for it. A live source no longer wastes requests on the virtual gear signal; on the dashboard the
-> gear comes from the DSG block (`22 210F`) when that block answers, otherwise it is `N/A`.
-> 0.6.0 replaced ad-hoc polling with one priority scheduler and explicit
-> `VALID`/`STALE`/`NEVER_READ` states; a JSON performance journal is exported from Settings.
+> 0.6.2 turns the main screen into a protection panel: coolant, absolute boost and oil temperature
+> in the three gauges; DSG temperature, intake air, exhaust gas, voltage and rail pressure in the
+> five tiles. Temperatures are polled first and go stale after 30 s; a stale value keeps its number
+> and lights a red dot. The chosen adapter is remembered, and Bluetooth clones that drop the secure
+> SPP socket now connect through insecure or channel-1 fallbacks.
 
 > [!NOTE]
-> **По-русски.** 0.6.1 запоминает выбранный адаптер и не показывает список
-> устройств без запроса. Живой источник больше не опрашивает виртуальную
-> передачу: на приборке она берётся из DSG (`22 210F`), если блок отвечает,
-> иначе `N/A`. В 0.6.0 появился единый планировщик, состояния
-> `VALID`/`STALE`/`NEVER_READ` и экспорт журнала. Проверено 100 JVM-тестами
-> и запуском 0.6.0 на телефоне с мок-ELM327; на автомобиле — нет.
+> **По-русски.** 0.6.2 — приборка защиты: ОЖ, абсолютный наддув и масло
+> на колодцах; температура DSG, впуска, выхлопа, напряжение и давление
+> в рампе на плитках. Температуры опрашиваются первыми и устаревают через
+> 30 секунд; устаревшее число остаётся, в углу горит красный кружок.
+> Проверено на реальной машине через OBDII: холостой 770 об/мин, ОЖ 78,
+> масло 84, наддув 0,98 бар, DSG 73, впуск 42, выхлоп 152, 14,4 В,
+> рампа 314 бар. Поездка и головное устройство — нет.
 > Полный перевод — [README.ru.md](README.ru.md).
 
 ## What this is
@@ -87,7 +89,7 @@ Three principles shaped the app:
 
 | Part | What it does |
 |---|---|
-| **Dashboard** | RPM, speed and boost in three analog-digital gauges; coolant, oil temperature, gear, instant consumption and fuel level in five tiles. Opens from the gauges icon on the diagnostics screen. |
+| **Dashboard** | Coolant, absolute boost and oil temperature in three analog-digital gauges; DSG temperature, intake air, exhaust gas temperature, voltage and rail pressure in five tiles. Opens from the gauges icon on the diagnostics screen. |
 | **Extended dashboard** | The same three gauges smaller, a category bar (Engine, Temperatures, Fuel, Gearbox, Turbo, Diagnostics) and an adaptive grid — five columns on a wide screen. Tapping a gauge opens its category. |
 | **Data catalog** | All 129 signals with search, category filter, value, request (PID/DID), ECU, protocol and verification status. |
 | **Day theme** | The same composition with separate light tokens, not an inverted image. See [screen-day.png](docs/assets/screen-day.png). |
@@ -124,7 +126,7 @@ More: [docs/AA.md](docs/AA.md) and [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md
 ## One telemetry — three surfaces
 
 <p align="center">
-  <img src="docs/assets/surfaces.svg" alt="0.6.1 mockup of three surfaces: dashboard, widget and Android Auto" width="100%">
+  <img src="docs/assets/surfaces.svg" alt="0.6.2 mockup of three surfaces: dashboard, widget and Android Auto" width="100%">
 </p>
 
 <p align="center"><sub>A mockup, not screenshots: the dashboard, widget and car screen read one state.</sub></p>
@@ -162,14 +164,15 @@ owns its own `Elm327`, so the two should not scan at the same time.
 
 - Dashboard and Extended Dashboard plus an overlay data catalog; swipe, gauge-to-category tap and
   back navigation.
-- Three analog-digital gauges and five tiles, then an adaptive five-column grid: the composition of
-  the reference mockups.
+- Three analog-digital gauges (coolant, absolute boost, oil temperature) and five protection tiles
+  (DSG, intake air, EGT, voltage, rail pressure), then an adaptive five-column grid.
 - Day and night themes with separate tokens; Auto follows the system, with a manual override.
 - English and Russian labels. English by default; Russian on a Russian system; manual override.
-- Unsupported, stale or never-read values show “—”, `N/A` and a status dot, never a zero.
-- Gear is a selector position: P, R, N, 1… It is read only from the DSG block (`22 210F`),
-  never from OBD-II; if the block does not answer, the tile stays `N/A`. The −2 offset comes from
-  the open OBDb set and is not yet confirmed on a car.
+- A stale value keeps its number and lights a red status dot; a dash means it was never read.
+  A zero is always a value, never a placeholder.
+- Absolute boost is the intake pressure (MAP), the same gauge a car console shows (0.98 bar at
+  idle). Relative boost remains a separate value in the Turbo tab.
+- The boost input is polled in a fast lane; temperatures are P0 and go stale after 30 s.
 - Demo Mode starts on the mockup values (86 °C, 0.62 bar, 95 °C, 96 km/h, 1840 rpm, gear 5, 48 %,
   21 %, 19 %, 162 kPa, 100 kPa, 42.5 g/s, 14.6 V, 58 %) and is always marked **DEMO**.
 
@@ -231,8 +234,8 @@ The two builds share one `applicationId` and **replace each other** when install
 
 | Build | What is inside | Size |
 |---|---|---|
-| `standard` | Dashboard, widget, diagnostics; no Android Auto. | ≈18.9 MB |
-| `aa` | The same plus Android Auto (Car App Library). | ≈20.2 MB |
+| `standard` | Dashboard, widget, diagnostics; no Android Auto. | ≈19.1 MB |
+| `aa` | The same plus Android Auto (Car App Library). | ≈20.5 MB |
 
 Requirements: Android 7.0+ (API 24), an ELM327 over Wi-Fi, Bluetooth SPP or USB serial, and network,
 Bluetooth, USB-host and notification permissions. Google Mobile Services are not required.
@@ -245,10 +248,10 @@ Through `adb`:
 
 ```sh
 # standard build
-adb install -r VAG-Performance-Monitor-0.6.1-standard.apk
+adb install -r VAG-Performance-Monitor-0.6.2-standard.apk
 
 # Android Auto build
-adb install -r VAG-Performance-Monitor-0.6.1-AA.apk
+adb install -r VAG-Performance-Monitor-0.6.2-AA.apk
 ```
 
 <details>
@@ -308,11 +311,12 @@ bug.
 |---|---|---|
 | `standard` debug build | `./gradlew :app:assembleStandardDebug` | **yes** |
 | `aa` debug build | `./gradlew :app:assembleAaDebug` | **yes** |
-| 100 JVM tests | `./gradlew :app:testStandardDebugUnitTest` | **yes** |
+| 118 JVM tests | `./gradlew :app:testStandardDebugUnitTest` | **yes** |
 | Scheduler priority, fairness, backoff, DID batching | `TelemetrySchedulerTest`, `Elm327UdsSourceTest` | **yes** |
 | Freshness 5/30 s, N/A, zero, recovery, connection loss, slow adapter, queue overload | `TelemetryEngineScenarioTest` | **yes** |
 | 0.6.0 on a real phone (Huawei, Android 12) with the mock ELM327 over Wi-Fi | adb + Wi-Fi mock | **yes** |
-| 0.6.1 on a real phone / live car adapter / car | hardware | **no** |
+| 0.6.2 on a real car through a Bluetooth OBDII adapter (idle values, absolute boost, DSG/EGT) | real car, phone | **yes** |
+| 0.6.2 while driving / head unit / Android Auto | real car | **no** |
 | Android 15 emulator: Dashboard, Extended, catalog, settings, themes/language, LIVE via ELM327 stub | emulator | **yes** |
 | VAG UDS decode and OBD/UDS header switching | fake ELM327 transport, JVM test | **yes** |
 | Widget placed and configured | Android 15 emulator launcher | **yes** |
@@ -442,9 +446,10 @@ is confirmed on a car. See [SIGNAL_CATALOG.md](SIGNAL_CATALOG.md) and
 - Profiles are manual; there is no VIN-based selection.
 - VAG DIDs come from one open Audi-Q3 set. They are decoded, not confirmed on an MQB TDI; some
   blocks will refuse a DID or answer only after `10 03`, which this app does not send.
-- Gear is not an OBD-II PID: it comes only from the DSG block (`22 210F`). If the block does not
-  answer, the tile stays `N/A`; P/R/N comes from the OBDb −2 offset and is not yet confirmed on a
-  car.
+- On the test car the gear DID (`210F`) and fuel level (`2206`) do not answer, so gear and fuel
+  level are not on the dashboard. P/R/N from the OBDb −2 offset is still unconfirmed.
+- Some VAG DIDs return implausible values on this car (coolant `1626` → 2222 °C, boost `1057` →
+  4.9 bar); the main screen uses standard PIDs and the DIDs that were verified.
 - DID batching is enabled per block only after a probe; a block that accepts the probe but returns
   an unusual layout will be detected and fall back to single reads, at the cost of one failed
   request.
@@ -498,6 +503,7 @@ release would need a host allowlist. More: [SECURITY.md](SECURITY.md).
 | [docs/TELEMETRY_OPTIMIZATION.md](docs/TELEMETRY_OPTIMIZATION.md) | The 0.6.0 scheduling spec and its implementation report |
 | [docs/TELEMETRY_OPTIMIZATION_REPORT.md](docs/TELEMETRY_OPTIMIZATION_REPORT.md) | What changed, test results, how to measure on a real adapter |
 | [CHANGELOG.md](CHANGELOG.md) | Change history |
+| [docs/releases/0.6.2.md](docs/releases/0.6.2.md) | 0.6.2 release notes |
 | [docs/releases/0.6.1.md](docs/releases/0.6.1.md) | 0.6.1 release notes |
 | [docs/releases/0.6.0.md](docs/releases/0.6.0.md) | 0.6.0 release notes |
 | [docs/releases/0.5.1.md](docs/releases/0.5.1.md) | 0.5.1 release notes |

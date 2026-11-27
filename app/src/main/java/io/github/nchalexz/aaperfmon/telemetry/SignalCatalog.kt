@@ -113,13 +113,13 @@ object SignalCatalog {
         add(
             obd(
                 Ids.RPM, "Обороты двигателя", "Engine speed", SignalCategory.ENGINE,
-                0x0C, word(scale = 0.25), "об/мин", 0, 0.0, 8000.0, 10.0,
+                0x0C, word(scale = 0.25), "об/мин", 0, 0.0, 8000.0, 2.0,
             )
         )
         add(
             obd(
                 Ids.SPEED, "Скорость автомобиля", "Vehicle speed", SignalCategory.ENGINE,
-                0x0D, ratio(scale = 1.0), "км/ч", 0, 0.0, 255.0, 10.0,
+                0x0D, ratio(scale = 1.0), "км/ч", 0, 0.0, 255.0, 2.0,
             )
         )
         add(
@@ -488,9 +488,17 @@ object SignalCatalog {
         Ids.SPEED to SignalPriority.P0,
         Ids.BOOST to SignalPriority.P0,
         Ids.MAP to SignalPriority.P0,
-        Ids.BARO to SignalPriority.P0,
+        // Атмосферное давление меняется за минуты: в очередь P0 ему незачем.
+        Ids.BARO to SignalPriority.P2,
+        // Температуры — то, за чем следят, чтобы не перегреть мотор.
+        // Опрашиваются часто и устаревают быстро: 30 секунд.
         Ids.OIL_TEMP to SignalPriority.P0,
         Ids.COOLANT to SignalPriority.P0,
+        Ids.INTAKE_AIR to SignalPriority.P0,
+        "vag.7e0.10fb.egt1" to SignalPriority.P0,
+        Ids.LOAD to SignalPriority.P1,
+        Ids.VOLTAGE to SignalPriority.P1,
+        Ids.RAIL_PRESSURE to SignalPriority.P1,
         // P1: момент, мощность, передача, педаль, давление топлива.
         Ids.TORQUE_NM to SignalPriority.P1,
         Ids.TORQUE_PCT to SignalPriority.P1,
@@ -509,16 +517,78 @@ object SignalCatalog {
      */
     private val gearSignals: Set<String> = setOf(Ids.GEAR, "vag.7e1.210f.gear")
 
+    /** Обороты и скорость — в быстрой полосе: их видно на шкалах. */
+    private val fastSignals: Set<String> = setOf(Ids.MAP)
+
+    /** Температура DSG — на главной, поэтому опрашивается раз в секунду. */
+    private const val DSG_TEMP_ID = "vag.7e1.2104.atf_temp"
+
+    /**
+     * Сроки актуальности по природе величины.
+     *
+     * Приоритет в очереди и скорость изменения — разные вещи: ОЖ важна, но
+     * за десять секунд не меняется, а уровень топлива не меняется минутами.
+     * Сроки подобраны так, чтобы число не гасло между опросами, но и не
+     * висело «свежим» после потери связи.
+     */
+    private val staleOverrides: Map<String, Long> = mapOf(
+        // Быстрые величины: обновляются несколько раз в секунду.
+        Ids.RPM to 20_000L,
+        Ids.SPEED to 20_000L,
+        Ids.INTAKE_AIR to 30_000L,
+        "vag.7e0.10fb.egt1" to 30_000L,
+        Ids.LOAD to 30_000L,
+        Ids.MAP to 20_000L,
+        Ids.BOOST to 20_000L,
+        Ids.LOAD to 20_000L,
+        Ids.MAF to 20_000L,
+        Ids.THROTTLE to 20_000L,
+        Ids.PEDAL to 20_000L,
+        Ids.TIMING to 20_000L,
+        Ids.TORQUE_PCT to 60_000L,
+        Ids.TORQUE_NM to 60_000L,
+        Ids.POWER_KW to 60_000L,
+        Ids.TORQUE_REF to 120_000L,
+        Ids.GEAR to 60_000L,
+        Ids.FUEL_RATE to 60_000L,
+        Ids.FUEL_L100 to 60_000L,
+        Ids.FUEL_PRESSURE to 60_000L,
+        Ids.RAIL_PRESSURE to 60_000L,
+        Ids.RAIL_REL to 60_000L,
+        // Температуры меняются за минуты.
+        Ids.COOLANT to 30_000L,
+        Ids.OIL_TEMP to 30_000L,
+        Ids.CATALYST to 30_000L,
+        // Эти почти не меняются за поездку.
+        Ids.AMBIENT to 900_000L,
+        Ids.BARO to 900_000L,
+        Ids.FUEL_LEVEL to 900_000L,
+        Ids.VOLTAGE to 120_000L,
+        Ids.RUN_TIME to 900_000L,
+        Ids.DISTANCE_MIL to 900_000L,
+        Ids.DISTANCE_CLEARED to 900_000L,
+        Ids.WARMUPS to 900_000L,
+        Ids.ETHANOL to 900_000L,
+    )
+
     private fun decorate(definitions: List<SignalDefinition>): List<SignalDefinition> =
         definitions.map { definition ->
             val priority = priorities[definition.id]
             val gear = definition.id in gearSignals
-            if (priority == null && !gear) {
+            val stale = staleOverrides[definition.id]
+            val fast = definition.id in fastSignals
+            val dsg = definition.id == DSG_TEMP_ID
+            if (priority == null && !gear && stale == null && !fast && !dsg) {
                 definition
             } else {
                 definition.copy(
-                    priority = priority ?: definition.priority,
+                    priority = if (dsg) SignalPriority.P0 else {
+                        priority ?: definition.priority
+                    },
                     display = if (gear) ValueDisplay.GEAR else definition.display,
+                    staleMs = if (dsg) 30_000L else (stale ?: definition.staleMs),
+                    fast = fast || definition.fast,
+                    pollHz = if (dsg) 1.0 else definition.pollHz,
                 )
             }
         }

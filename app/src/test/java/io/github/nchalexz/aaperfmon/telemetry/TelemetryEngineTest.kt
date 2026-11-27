@@ -85,7 +85,15 @@ class TelemetryEngineTest {
         runCurrent()
 
         assertTrue("Источник не опрашивался", source.order.isNotEmpty())
-        assertEquals(SignalCatalog.Ids.RPM, source.order.first())
+        // Первым идёт быстрый сигнал приборки (обороты или давление впуска),
+        // а не параметр каталога.
+        assertTrue(
+            "Приборка не получила первый слот: ${source.order.first()}",
+            source.order.first() in setOf(
+                SignalCatalog.Ids.RPM,
+                SignalCatalog.Ids.MAP,
+            ),
+        )
         engine.stop()
     }
 

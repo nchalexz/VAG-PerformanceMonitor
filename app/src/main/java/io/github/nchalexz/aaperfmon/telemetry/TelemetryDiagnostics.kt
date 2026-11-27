@@ -27,6 +27,28 @@ object TelemetryDiagnostics {
     const val DIRECTORY = "diagnostics"
 
     private const val KEEP_FILES = 5
+    private const val RAW_EXCHANGE_LIMIT = 300
+    private const val RAW_RESPONSE_LIMIT = 400
+
+    /** VIN-идентификаторы, которые нельзя выгружать даже как «сырой ответ». */
+    private val PRIVATE_DIDS = setOf("F190", "F187", "F189", "F19E", "F18C")
+
+    /**
+     * Оставляет только запросы телеметрии.
+     *
+     * Команда вида `22 <DID>` относится к телеметрии, но `22F190` — это VIN.
+     * Такие DID исключены, чтобы журнал не содержал идентификатор машины.
+     */
+    private fun isTelemetryCommand(command: String): Boolean {
+        val clean = command.replace(" ", "").uppercase()
+        if (clean.length < 4) return false
+        if (clean.startsWith("01") && clean.length == 4) return true
+        if (clean.startsWith("22") && clean.length >= 6) {
+            val did = clean.substring(2, 6)
+            return did !in PRIVATE_DIDS
+        }
+        return false
+    }
 
     fun export(
         context: Context,
@@ -35,6 +57,7 @@ object TelemetryDiagnostics {
         metrics: TelemetryMetrics.Snapshot?,
         schedule: List<TelemetryScheduler.Snapshot>,
         events: List<TelemetryMetrics.Event>,
+        rawLog: List<Pair<String, String>> = emptyList(),
     ): File? = runCatching {
         val directory = File(context.cacheDir, DIRECTORY).apply { mkdirs() }
         rotate(directory)
@@ -103,10 +126,30 @@ object TelemetryDiagnostics {
                 },
             )
             put(
+                "rawExchange",
+                JSONArray().apply {
+                    // Только запросы телеметрии: OBD mode 01 и UDS 22.
+                    // VIN-идентификаторы (F190 и родственные) отфильтрованы,
+                    // как и любые команды диагностики.
+                    rawLog
+                        .filter { (command, _) -> isTelemetryCommand(command) }
+                        .takeLast(RAW_EXCHANGE_LIMIT)
+                        .forEach { (command, response) ->
+                            put(
+                                JSONObject().apply {
+                                    put("command", command)
+                                    put("response", response.trim().take(RAW_RESPONSE_LIMIT))
+                                },
+                            )
+                        }
+                },
+            )
+            put(
                 "notes",
                 JSONArray().apply {
                     put("times are monotonic milliseconds since device boot (elapsedRealtime)")
                     put("no VIN, no location, no vehicle identifiers are collected")
+                    put("rawExchange contains only OBD 01 and UDS 22 requests; VIN DIDs are filtered")
                 },
             )
         }

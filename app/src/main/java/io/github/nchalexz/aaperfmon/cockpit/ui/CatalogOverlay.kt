@@ -179,12 +179,10 @@ fun CatalogOverlay(
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            if (reading.isOk) {
+                            if (reading.isOk || reading.stale) {
                                 "${reading.text} ${spec.unit(language)}".trim()
                             } else {
-                                // «Нет данных» и «ещё не прочитан» — разные
-                                // вещи: N/A вместо прочерка честнее.
-                                reading.text
+                                "—"
                             },
                             color = when {
                                 !reading.isOk -> colors.dim

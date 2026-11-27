@@ -26,7 +26,7 @@ class TelemetryScheduler(
 
     /** Числовые настройки планировщика. Вынесены сюда ради тестов. */
     data class Config(
-        val minIntervalMs: Long = 100L,
+        val minIntervalMs: Long = 60L,
         val maxIntervalMs: Long = 30_000L,
         val maxBackoffMs: Long = 15_000L,
         /** Как часто перепроверять параметр, который ни разу не ответил. */
@@ -40,9 +40,15 @@ class TelemetryScheduler(
         /** Через сколько ожидания параметр поднимается на ступень в очереди. */
         val starvationMs: Long = 3_000L,
         /** Сколько DID можно попросить одним запросом. */
-        val batchLimit: Int = 4,
-        /** Минимальный интервал фоновых сигналов (виджет, профиль). */
-        val backgroundFloorMs: Long = 1_000L,
+        val batchLimit: Int = 2,
+        /**
+         * Минимальный интервал фоновых сигналов (виджет, профиль).
+         *
+         * Виджет обновляется раз в 30 секунд, поэтому опрашивать профиль
+         * каждую секунду незачем: эти запросы отбирают шину у приборки
+         * и как раз вызывают «мигание» устаревших значений на экране.
+         */
+        val backgroundFloorMs: Long = 5_000L,
         /** Минимальный интервал каталога Live Data. */
         val catalogFloorMs: Long = 1_000L,
     )
@@ -325,15 +331,19 @@ class TelemetryScheduler(
      * не откладывается бесконечно, пока P0 занимает каждый слот шины.
      */
     private fun rank(entry: Entry, now: Long): Int {
-        var rank = entry.priority.ordinal
-        // Параметр, который ещё ни разу не опрашивался, ждёт с момента
-        // появления в очереди: иначе при насыщенной шине P2 не получил бы
-        // ни одного шанса, пока P0 постоянно просрочен.
+        // Обороты и скорость идут вне очереди: это самые заметные стрелки.
+        if (entry.definition.fast) return 0
+
+        var rank = entry.priority.ordinal + 1
+        // Параметр, который давно ждёт, поднимается: иначе при насыщенной
+        // шине P2 не получил бы ни одного шанса. На девяти секундах он
+        // дотягивается до быстрой полосы и выигрывает по времени ожидания.
         val since = if (entry.attempted) entry.lastAttemptMs else entry.createdAtMs
         val waited = now - since
-        if (waited >= config.starvationMs) rank = (rank - 1).coerceAtLeast(0)
-        if (waited >= config.starvationMs * 2) rank = (rank - 2).coerceAtLeast(0)
-        return rank
+        if (waited >= config.starvationMs) rank -= 1
+        if (waited >= config.starvationMs * 2) rank -= 1
+        if (waited >= config.starvationMs * 3) rank -= 1
+        return rank.coerceAtLeast(0)
     }
 
     private fun baseIntervalMs(entry: Entry): Long =

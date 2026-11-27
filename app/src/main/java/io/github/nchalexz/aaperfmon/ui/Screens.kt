@@ -116,30 +116,49 @@ fun ConnectScreen(state: AppState, model: DiagViewModel) {
             },
         )
     }
-    var chosen by remember {
-        mutableStateOf(
-            when (saved) {
-                is AdapterConfig.Bluetooth -> saved.address
-                is AdapterConfig.Usb -> saved.deviceName
-                else -> ""
-            },
-        )
+    var btChosen by remember {
+        mutableStateOf((saved as? AdapterConfig.Bluetooth)?.address.orEmpty())
     }
+    var btLabel by remember {
+        mutableStateOf((saved as? AdapterConfig.Bluetooth)?.name.orEmpty())
+    }
+    var usbChosen by remember {
+        mutableStateOf((saved as? AdapterConfig.Usb)?.deviceName.orEmpty())
+    }
+    var usbLabel by remember {
+        mutableStateOf((saved as? AdapterConfig.Usb)?.displayName.orEmpty())
+    }
+    // Список устройств открывается только по кнопке: при обычном входе
+    // видно сохранённый адаптер, а не перечисление всех спаренных.
+    var showBtList by remember { mutableStateOf(btChosen.isBlank()) }
+    var showUsbList by remember { mutableStateOf(usbChosen.isBlank()) }
 
     Column(Modifier.verticalScroll(rememberScrollState()).padding(12.dp)) {
 
         Card("Адаптер") {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 FilterChip(selected = mode == "wifi",
-                           onClick = { mode = "wifi"; chosen = "" },
+                           onClick = { mode = "wifi" },
                            label = { Text("Wi-Fi") })
                 Spacer(Modifier.width(8.dp))
                 FilterChip(selected = mode == "bt",
-                           onClick = { mode = "bt"; chosen = ""; model.loadBondedDevices() },
+                           onClick = {
+                               mode = "bt"
+                               if (btChosen.isBlank()) {
+                                   showBtList = true
+                                   model.loadBondedDevices()
+                               }
+                           },
                            label = { Text("Bluetooth") })
                 Spacer(Modifier.width(8.dp))
                 FilterChip(selected = mode == "usb",
-                           onClick = { mode = "usb"; chosen = ""; model.loadUsbDevices() },
+                           onClick = {
+                               mode = "usb"
+                               if (usbChosen.isBlank()) {
+                                   showUsbList = true
+                                   model.loadUsbDevices()
+                               }
+                           },
                            label = { Text("USB") })
             }
 
@@ -163,37 +182,72 @@ fun ConnectScreen(state: AppState, model: DiagViewModel) {
                 Hint("Телефон должен быть подключён к сети Wi-Fi адаптера. " +
                      "Зажигание включено, двигатель заглушен.")
             } else if (mode == "usb") {
-                if (state.usbDevices.isEmpty()) {
-                    Text("USB-адаптеров не видно. Нужен кабель OTG, а сам адаптер " +
-                         "питается от разъёма OBD — без зажигания он молчит.",
-                         color = DimColor, fontSize = 13.sp)
+                val selectedName = state.usbDevices.firstOrNull { it.first == usbChosen }?.second
+                    ?: usbLabel.takeIf { it.isNotBlank() } ?: usbChosen
+                if (usbChosen.isNotBlank() && !showUsbList) {
+                    Text("Сохранённый адаптер", color = DimColor, fontSize = 11.sp)
+                    Text(selectedName, color = TextColor, fontSize = 14.sp)
+                    Text(usbChosen, color = DimColor, fontSize = 12.sp,
+                         fontFamily = FontFamily.Monospace)
                     Spacer(Modifier.height(10.dp))
-                    OutlinedButton(onClick = { model.loadUsbDevices() },
-                                   modifier = Modifier.fillMaxWidth()) {
-                        Text("Обновить список")
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = { model.connectUsb(usbChosen) },
+                               enabled = !state.busy, modifier = Modifier.weight(1f)) {
+                            Text("Подключиться")
+                        }
+                        OutlinedButton(onClick = {
+                            showUsbList = true
+                            model.loadUsbDevices()
+                        }) { Text("Выбрать другой", fontSize = 12.sp) }
                     }
                 } else {
-                    state.usbDevices.forEach { (path, name) ->
-                        val tint = if (chosen == path) Panel2Color else PanelColor
-                        Surface(color = tint, shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier.fillMaxWidth()
-                                    .padding(vertical = 3.dp)) {
-                            Column(Modifier.padding(12.dp)) {
-                                Text(name, color = TextColor, fontSize = 14.sp)
-                                Text(path, color = DimColor, fontSize = 12.sp,
-                                     fontFamily = FontFamily.Monospace)
+                    if (state.usbDevices.isEmpty()) {
+                        Text("USB-адаптеров не видно. Нужен кабель OTG, а сам адаптер " +
+                             "питается от разъёма OBD — без зажигания он молчит.",
+                             color = DimColor, fontSize = 13.sp)
+                        Spacer(Modifier.height(10.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(onClick = { model.loadUsbDevices() },
+                                           modifier = Modifier.weight(1f)) {
+                                Text("Обновить список")
+                            }
+                            if (usbChosen.isNotBlank()) {
+                                TextButton(onClick = { showUsbList = false }) {
+                                    Text("Назад", fontSize = 12.sp)
+                                }
                             }
                         }
-                        Spacer(Modifier.height(2.dp))
-                        TextButton(onClick = { chosen = path }) {
-                            Text(if (chosen == path) "Выбрано" else "Выбрать")
+                    } else {
+                        state.usbDevices.forEach { (path, name) ->
+                            val tint = if (usbChosen == path) Panel2Color else PanelColor
+                            Surface(color = tint, shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                        .padding(vertical = 3.dp)) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text(name, color = TextColor, fontSize = 14.sp)
+                                    Text(path, color = DimColor, fontSize = 12.sp,
+                                         fontFamily = FontFamily.Monospace)
+                                }
+                            }
+                            Spacer(Modifier.height(2.dp))
+                            TextButton(onClick = {
+                                usbChosen = path
+                                usbLabel = name
+                                showUsbList = false
+                                AdapterStore.remember(
+                                    context,
+                                    AdapterConfig.Usb(path, name),
+                                )
+                            }) {
+                                Text(if (usbChosen == path) "Выбрано" else "Выбрать")
+                            }
                         }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Button(onClick = { model.connectUsb(chosen) },
-                           enabled = !state.busy && chosen.isNotBlank(),
-                           modifier = Modifier.fillMaxWidth()) {
-                        Text("Подключиться")
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = { model.connectUsb(usbChosen) },
+                               enabled = !state.busy && usbChosen.isNotBlank(),
+                               modifier = Modifier.fillMaxWidth()) {
+                            Text("Подключиться")
+                        }
                     }
                 }
                 Hint("Скорость обмена приложение подбирает само: перебирает " +
@@ -201,42 +255,77 @@ fun ConnectScreen(state: AppState, model: DiagViewModel) {
                      "Если воткнуть адаптер при открытом телефоне, Android " +
                      "предложит открыть это приложение сам.")
             } else {
-                if (state.bondedDevices.isEmpty()) {
-                    Text("Сопряжённых устройств нет. Выполните сопряжение " +
-                         "в настройках Bluetooth телефона, затем обновите список.",
-                         color = DimColor, fontSize = 13.sp)
+                val selectedName = state.bondedDevices.firstOrNull { it.first == btChosen }?.second
+                    ?: btLabel.takeIf { it.isNotBlank() } ?: btChosen
+                if (btChosen.isNotBlank() && !showBtList) {
+                    Text("Сохранённый адаптер", color = DimColor, fontSize = 11.sp)
+                    Text(selectedName, color = TextColor, fontSize = 14.sp)
+                    Text(btChosen, color = DimColor, fontSize = 12.sp,
+                         fontFamily = FontFamily.Monospace)
                     Spacer(Modifier.height(10.dp))
-                    OutlinedButton(onClick = { model.loadBondedDevices() },
-                                   modifier = Modifier.fillMaxWidth()) {
-                        Text("Обновить список")
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = { model.connectBluetooth(btChosen) },
+                               enabled = !state.busy, modifier = Modifier.weight(1f)) {
+                            Text("Подключиться")
+                        }
+                        OutlinedButton(onClick = {
+                            showBtList = true
+                            model.loadBondedDevices()
+                        }) { Text("Выбрать другой", fontSize = 12.sp) }
                     }
                 } else {
-                    state.bondedDevices.forEach { (address, name) ->
-                        val tint = if (chosen == address) Panel2Color else PanelColor
-                        Surface(color = tint, shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier.fillMaxWidth()
-                                    .padding(vertical = 3.dp)) {
-                            Column(Modifier.padding(12.dp)) {
-                                Text(name, color = TextColor, fontSize = 14.sp)
-                                Text(address, color = DimColor, fontSize = 12.sp,
-                                     fontFamily = FontFamily.Monospace)
+                    if (state.bondedDevices.isEmpty()) {
+                        Text("Сопряжённых устройств нет. Выполните сопряжение " +
+                             "в настройках Bluetooth телефона, затем обновите список.",
+                             color = DimColor, fontSize = 13.sp)
+                        Spacer(Modifier.height(10.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(onClick = { model.loadBondedDevices() },
+                                           modifier = Modifier.weight(1f)) {
+                                Text("Обновить список")
+                            }
+                            if (btChosen.isNotBlank()) {
+                                TextButton(onClick = { showBtList = false }) {
+                                    Text("Назад", fontSize = 12.sp)
+                                }
                             }
                         }
-                        Spacer(Modifier.height(2.dp))
-                        TextButton(onClick = { chosen = address }) {
-                            Text(if (chosen == address) "Выбрано" else "Выбрать")
+                    } else {
+                        state.bondedDevices.forEach { (address, name) ->
+                            val tint = if (btChosen == address) Panel2Color else PanelColor
+                            Surface(color = tint, shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                        .padding(vertical = 3.dp)) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text(name, color = TextColor, fontSize = 14.sp)
+                                    Text(address, color = DimColor, fontSize = 12.sp,
+                                         fontFamily = FontFamily.Monospace)
+                                }
+                            }
+                            Spacer(Modifier.height(2.dp))
+                            TextButton(onClick = {
+                                btChosen = address
+                                btLabel = name
+                                showBtList = false
+                                AdapterStore.remember(
+                                    context,
+                                    AdapterConfig.Bluetooth(address, name),
+                                )
+                            }) {
+                                Text(if (btChosen == address) "Выбрано" else "Выбрать")
+                            }
                         }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Button(onClick = { model.connectBluetooth(chosen) },
-                           enabled = !state.busy && chosen.isNotBlank(),
-                           modifier = Modifier.fillMaxWidth()) {
-                        Text("Подключиться")
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = { model.connectBluetooth(btChosen) },
+                               enabled = !state.busy && btChosen.isNotBlank(),
+                               modifier = Modifier.fillMaxWidth()) {
+                            Text("Подключиться")
+                        }
                     }
                 }
                 Hint("Bluetooth-адаптеры работают только в этом приложении: " +
                      "профиль последовательного порта недоступен из браузера " +
-                     "и из Termux.")
+                     "и из Termux. Выбранный адаптер запоминается.")
             }
 
             if (state.connected) {

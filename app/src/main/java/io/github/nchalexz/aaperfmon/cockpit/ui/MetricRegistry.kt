@@ -138,12 +138,20 @@ data class MetricReading(
     val text: String,
 ) {
     val isOk: Boolean get() = state == MetricState.OK
-    val fraction: Float? get() = if (isOk) spec.fraction(display) else null
+
+    /**
+     * Значение было, но устарело. На экране оно остаётся числом, только
+     * светло-серым: прочерк означает «не получено ни разу», а не «давно
+     * не обновлялось». Так цифры не мигают между числом и прочерком.
+     */
+    val stale: Boolean get() = state == MetricState.STALE && raw != null
+
+    val fraction: Float? get() = if (isOk || stale) spec.fraction(display) else null
 }
 
 fun MetricState.note(language: UiLanguage): String = when (this) {
     MetricState.OK -> ""
-    MetricState.NEVER_READ -> language.pick("not read yet", "нет данных")
+    MetricState.NEVER_READ -> language.pick("not read yet", "не прочитан")
     MetricState.WAITING -> language.pick("waiting", "ожидание")
     MetricState.STALE -> language.pick("stale", "устарело")
     MetricState.UNSUPPORTED -> language.pick("not supported", "не поддерживается")
@@ -179,45 +187,75 @@ fun readMetric(
         add(MetricSource(spec.signalId, spec.factor, spec.decimals))
         addAll(spec.alternatives)
     }
-    var best: MetricReading? = null
-    for (source in sources) {
-        val definition = SignalCatalog.get(source.signalId) ?: continue
+
+    data class Candidate(
+        val source: MetricSource,
+        val definition: SignalDefinition,
+        val value: SignalValue?,
+        val status: SignalStatus?,
+    )
+
+    val candidates = sources.mapNotNull { source ->
+        val definition = SignalCatalog.get(source.signalId) ?: return@mapNotNull null
         val value = values[source.signalId]
-        // Состояние отображения определяется актуальностью, а не последней
-        // попыткой: одиночный таймаут не должен превращать число в прочерк.
-        val status = value?.statusAt(now, definition)
+        Candidate(source, definition, value, value?.statusAt(now, definition))
+    }
+
+    fun render(candidate: Candidate): MetricReading {
+        val status = candidate.status ?: SignalStatus.NEVER_READ
         val state = when {
             !canShowData -> MetricState.OFFLINE
-            value == null -> MetricState.NEVER_READ
             status == SignalStatus.NEVER_READ -> MetricState.NEVER_READ
             status == SignalStatus.STALE -> MetricState.STALE
             else -> MetricState.OK
         }
-        val raw = if (state == MetricState.OK) value?.value else null
-        val reading = MetricReading(
+        val raw = if (state == MetricState.OK || state == MetricState.STALE) {
+            candidate.value?.value
+        } else {
+            null
+        }
+        return MetricReading(
             spec = spec,
             raw = raw,
-            display = raw?.let { spec.display(it, source.factor) },
+            display = raw?.let { spec.display(it, candidate.source.factor) },
             state = state,
             text = when {
                 raw != null -> spec.format(
                     raw,
-                    source.factor,
-                    source.decimals ?: spec.decimals,
+                    candidate.source.factor,
+                    candidate.source.decimals ?: spec.decimals,
                 )
-                state == MetricState.NEVER_READ -> "N/A"
                 else -> "—"
             },
         )
-        if (state == MetricState.OK) return reading
-        if (best == null || rank(state) < rank(best.state)) best = reading
     }
-    return best ?: MetricReading(
+
+    if (!canShowData) return render(candidates.firstOrNull() ?: return MetricReading(
         spec = spec,
         raw = null,
         display = null,
-        state = if (canShowData) MetricState.NEVER_READ else MetricState.OFFLINE,
-        text = if (canShowData) "N/A" else "—",
+        state = MetricState.OFFLINE,
+        text = "—",
+    ))
+
+    // Порядок выбора источника фиксирован, а не зависит от того, кто
+    // успел ответить последним: иначе число и прочерк мигали бы между
+    // основным PID и запасным DID. Сначала свежий основной, затем свежий
+    // запасной, затем самое новое из устаревших, и только потом «—».
+    candidates.firstOrNull { it.status == SignalStatus.VALID }?.let { return render(it) }
+    candidates.firstOrNull { it.value?.value != null && it.status == SignalStatus.STALE }
+        ?.let { return render(it) }
+    val newest = candidates
+        .filter { it.value?.value != null }
+        .maxByOrNull { it.value!!.timestampMs }
+    if (newest != null) return render(newest)
+
+    return MetricReading(
+        spec = spec,
+        raw = null,
+        display = null,
+        state = MetricState.NEVER_READ,
+        text = "—",
     )
 }
 
@@ -275,10 +313,22 @@ object MetricRegistry {
         min = 40.0, max = 120.0, warn = 105.0, critical = 115.0,
         icon = GaugeIcon.COOLANT,
     )
+    /** Избыточный наддув: MAP минус атмосферное. Вкладка «Турбо». */
     val boost = metric(
-        SignalCatalog.Ids.BOOST, DisplayCategory.ENGINE,
-        "Boost", "НАДДУВ", "bar", "бар", 2,
+        SignalCatalog.Ids.BOOST, DisplayCategory.TURBO,
+        "Boost rel.", "НАДДУВ ИЗБ.", "bar", "бар", 2,
         factor = 0.01, min = -1.0, max = 2.0, warn = 1.75, critical = 1.9,
+    )
+
+    /**
+     * Абсолютное давление во впуске — то, что показывает консоль машины
+     * (например, 0,98 бар на холостом ходу). Это MAP, а не разница с
+     * атмосферным; избыточный наддув остался отдельным показателем.
+     */
+    val chargePressure = metric(
+        SignalCatalog.Ids.MAP, DisplayCategory.TURBO,
+        "Boost abs.", "НАДДУВ АБС.", "bar", "бар", 2,
+        factor = 0.01, min = 0.0, max = 2.5, warn = 2.0, critical = 2.3,
         icon = GaugeIcon.BOOST,
     )
     val oil = metric(
@@ -429,6 +479,27 @@ object MetricRegistry {
     private val rail = metric(
         SignalCatalog.Ids.RAIL_PRESSURE, DisplayCategory.FUEL,
         "RAIL PRESSURE", "ДАВЛ. РАМПЫ", "kPa", "кПа", 0,
+    )
+
+    /** Давление в рампе в барах: 31000 кПа читается как 310 бар. */
+    private val railBar = metric(
+        SignalCatalog.Ids.RAIL_PRESSURE, DisplayCategory.FUEL,
+        "RAIL", "ДАВЛ. РАМПЫ", "bar", "бар", 0,
+        factor = 0.01, min = 0.0, max = 2500.0,
+    )
+
+    /** Температура выхлопа: перегрев турбины и DPF видно по ней. */
+    private val egt = metric(
+        "vag.7e0.10fb.egt1", DisplayCategory.TEMPERATURES,
+        "EGT", "ВЫХЛОП", "°C", "°C", 0,
+        min = 0.0, max = 900.0, warn = 700.0, critical = 850.0,
+    )
+
+    /** Температура масла DSG из блока коробки: важна для защиты КП. */
+    private val dsgTemp = metric(
+        "vag.7e1.2104.atf_temp", DisplayCategory.GEARBOX,
+        "DSG OIL", "ТЕМП. DSG", "°C", "°C", 0,
+        min = 30.0, max = 140.0, warn = 110.0, critical = 125.0,
     )
     private val railRelative = metric(
         SignalCatalog.Ids.RAIL_REL, DisplayCategory.FUEL,
@@ -596,10 +667,28 @@ object MetricRegistry {
      * по стрелке. Обороты, скорость и наддув; температуры вынесены в плитки,
      * потому что за поездку они почти не двигаются, а место на шкале занимают.
      */
-    val gauges: List<MetricSpec> = listOf(rpm, speed, boost)
+    /**
+     * Три колодца главного экрана: то, за чем следят, чтобы не перегреть
+     * и не повредить двигатель. Обороты и скорость видны на плитках —
+     * их и так показывает щиток автомобиля.
+     */
+    val gauges: List<MetricSpec> = listOf(coolant, chargePressure, oil)
 
     /** Пять плиток: медленные и дискретные величины, которые нужны цифрой. */
-    val mainTiles: List<MetricSpec> = listOf(coolant, oil, gear, fuelUse, fuelLevel)
+    /**
+     * Пять плиток главного экрана — только показатели, которые стандартный
+     * OBD-II отдаёт на подавляющем большинстве машин и в которых мы уверены.
+     *
+     * Передача, мгновенный расход и уровень топлива убраны: для передачи
+     * нужен DID коробки, который отвечает не всегда, а PID расхода (0x5E)
+     * и уровня (0x2F) многие блоки не поддерживают. Вместо них — нагрузка,
+     * давление во впуске и напряжение, которые понятны и проверяемы.
+     */
+    /**
+     * Пять плиток: обороты и скорость плюс показатели, по которым видно
+     * перегрев, перегрузку и проблемы с питанием.
+     */
+    val mainTiles: List<MetricSpec> = listOf(dsgTemp, intakeAir, egt, voltage, railBar)
 
     private val engine = listOf(
         speed, rpm, load, throttle, pedal,
@@ -615,7 +704,7 @@ object MetricRegistry {
     )
     // OBD-II передачу не отдаёт: в расширенной сетке её заменяет VAG DID.
     private val gearbox = emptyList<MetricSpec>()
-    private val turbo = listOf(boost, map, baro)
+    private val turbo = listOf(chargePressure, boost, baro)
     private val diagnostics = listOf(
         voltage, trimShort, trimLong, timing, egr, egrError, catalyst,
         distanceMil, distanceCleared, warmups, runTime, lambda,

@@ -106,15 +106,62 @@ class BluetoothTransport(private val device: BluetoothDevice) : Transport {
 
     @SuppressLint("MissingPermission")
     override fun open() {
+        runCatching { BluetoothAdapter.getDefaultAdapter()?.cancelDiscovery() }
         // Стандартный идентификатор профиля последовательного порта.
         // Все адаптеры ELM327 используют именно его.
         val sppUuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
-        val created = device.createRfcommSocketToServiceRecord(sppUuid)
-        runCatching { BluetoothAdapter.getDefaultAdapter()?.cancelDiscovery() }
-        created.connect()
-        socket = created
-        input = created.inputStream
-        output = created.outputStream
+        val lastError = openWithFallbacks(sppUuid)
+        if (socket == null) throw lastError ?: java.io.IOException("Bluetooth: нет соединения")
+        input = socket!!.inputStream
+        output = socket!!.outputStream
+    }
+
+    /**
+     * Три способа открыть SPP, потому что дешёвые клоны ведут себя по-разному.
+     *
+     * 1. Обычный защищённый RFCOMM — работает на большинстве адаптеров.
+     * 2. Незащищённый RFCOMM: часть клонов отвечает «read failed, socket might
+     *    closed» на защищённый канал.
+     * 3. Канал 1 через скрытый `createRfcommSocket`: некоторые прошивки
+     *    не публикуют SDP-запись вовсе.
+     *
+     * Возвращает последнюю ошибку, если все способы не сработали; закрытые
+     * сокеты не оставляет.
+     */
+    @SuppressLint("MissingPermission")
+    private fun openWithFallbacks(sppUuid: UUID): Exception? {
+        fun attempt(open: () -> BluetoothSocket): Exception? {
+            var created: BluetoothSocket? = null
+            return try {
+                created = open()
+                created.connect()
+                socket = created
+                null
+            } catch (error: Exception) {
+                runCatching { created?.close() }
+                error
+            }
+        }
+
+        var lastError = attempt { device.createRfcommSocketToServiceRecord(sppUuid) }
+        if (socket != null) return null
+
+        Thread.sleep(300)
+        lastError = attempt { device.createInsecureRfcommSocketToServiceRecord(sppUuid) }
+            ?: lastError
+        if (socket != null) return null
+
+        Thread.sleep(300)
+        lastError = attempt {
+            val method = device.javaClass.getMethod(
+                "createRfcommSocket",
+                Int::class.javaPrimitiveType,
+            )
+            @Suppress("DEPRECATION")
+            method.invoke(device, 1) as BluetoothSocket
+        } ?: lastError
+
+        return if (socket != null) null else lastError
     }
 
     override fun write(data: ByteArray) {

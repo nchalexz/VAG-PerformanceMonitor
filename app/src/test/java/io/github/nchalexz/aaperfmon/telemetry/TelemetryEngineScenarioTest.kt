@@ -117,7 +117,9 @@ class TelemetryEngineScenarioTest {
         val engine = engine(source)
         engine.setDashboard(listOf(SignalCatalog.Ids.RPM))
         engine.start()
-        advanceTimeBy(400)
+        // Обороты опрашиваются 2 раза в секунду: одной секунды хватает
+        // на успешное чтение и хотя бы один таймаут после него.
+        advanceTimeBy(1_200)
         runCurrent()
 
         val fresh = engine.values.value[SignalCatalog.Ids.RPM]!!
@@ -129,7 +131,7 @@ class TelemetryEngineScenarioTest {
         assertTrue(fresh.consecutiveFailures > 0)
 
         engine.stop()
-        advanceTimeBy(6_000)
+        advanceTimeBy(21_000)
         runCurrent()
         val stale = engine.values.value[SignalCatalog.Ids.RPM]!!
         assertEquals(42.0, stale.value!!, 0.001)
@@ -140,7 +142,7 @@ class TelemetryEngineScenarioTest {
     }
 
     @Test
-    fun `frequent parameter becomes stale after five seconds`() = runTest {
+    fun `fast parameter keeps its number through normal gaps`() = runTest {
         val source = FakeSource { _, _ -> Reading(1_000.0, ReadingState.OK) }
         val engine = engine(source)
         engine.setDashboard(listOf(SignalCatalog.Ids.RPM))
@@ -153,12 +155,13 @@ class TelemetryEngineScenarioTest {
         val definition = definition(SignalCatalog.Ids.RPM)
         advanceTimeBy(4_000)
         assertEquals(SignalStatus.VALID, value.statusAt(testScheduler.currentTime, definition))
-        advanceTimeBy(1_200)
+        // Срок RPM — 20 секунд: значение не гаснет между опросами.
+        advanceTimeBy(17_000)
         assertEquals(SignalStatus.STALE, value.statusAt(testScheduler.currentTime, definition))
     }
 
     @Test
-    fun `rare parameter becomes stale after thirty seconds`() = runTest {
+    fun `fuel level survives minutes without polling`() = runTest {
         val source = FakeSource { _, _ -> Reading(58.0, ReadingState.OK) }
         val engine = engine(source)
         engine.setDashboard(listOf(SignalCatalog.Ids.FUEL_LEVEL))
@@ -170,9 +173,10 @@ class TelemetryEngineScenarioTest {
         val value = engine.values.value[SignalCatalog.Ids.FUEL_LEVEL]!!
         val definition = definition(SignalCatalog.Ids.FUEL_LEVEL)
         assertEquals(SignalPriority.P2, definition.priority)
-        advanceTimeBy(25_000)
+        // Уровень топлива почти не меняется, поэтому срок — 15 минут.
+        advanceTimeBy(850_000)
         assertEquals(SignalStatus.VALID, value.statusAt(testScheduler.currentTime, definition))
-        advanceTimeBy(6_000)
+        advanceTimeBy(60_000)
         assertEquals(SignalStatus.STALE, value.statusAt(testScheduler.currentTime, definition))
     }
 
@@ -199,6 +203,37 @@ class TelemetryEngineScenarioTest {
             value.statusAt(testScheduler.currentTime, definition(SignalCatalog.Ids.RPM)),
         )
         engine.stop()
+    }
+
+    @Test
+    fun `computed value stays on screen when its inputs go stale`() = runTest {
+        val source = FakeSource { id, now ->
+            when {
+                now > 3_000 -> Reading(null, ReadingState.ERROR, ReadingFailure.TIMEOUT)
+                id == SignalCatalog.Ids.MAP -> Reading(160.0, ReadingState.OK)
+                id == SignalCatalog.Ids.BARO -> Reading(100.0, ReadingState.OK)
+                else -> Reading(null, ReadingState.UNSUPPORTED)
+            }
+        }
+        val engine = engine(source)
+        engine.setDashboard(listOf(SignalCatalog.Ids.BOOST))
+        engine.start()
+        advanceTimeBy(1_000)
+        runCurrent()
+        engine.stop()
+
+        val boost = engine.values.value[SignalCatalog.Ids.BOOST]!!
+        assertEquals(60.0, boost.value!!, 0.001)
+
+        // Входы перестали отвечать: число не исчезает, а помечается
+        // устаревшим. Проверка идёт по времени, а не по новому ответу.
+        advanceTimeBy(22_000)
+        val later = engine.values.value[SignalCatalog.Ids.BOOST]!!
+        assertEquals(60.0, later.value!!, 0.001)
+        assertEquals(
+            SignalStatus.STALE,
+            later.statusAt(testScheduler.currentTime, definition(SignalCatalog.Ids.BOOST)),
+        )
     }
 
     @Test
@@ -240,7 +275,8 @@ class TelemetryEngineScenarioTest {
                 .statusAt(testScheduler.currentTime, definition(SignalCatalog.Ids.COOLANT)),
         )
 
-        advanceTimeBy(7_000)
+        // ОЖ живёт 5 минут, поэтому потеря связи проверяется с запасом.
+        advanceTimeBy(305_000)
         runCurrent()
         for (id in listOf(SignalCatalog.Ids.COOLANT, SignalCatalog.Ids.RPM)) {
             assertEquals(

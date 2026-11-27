@@ -13,9 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -222,25 +221,36 @@ fun MetricGrid(
         if (specs.isEmpty()) {
             EmptyCategory(language, Modifier.fillMaxSize())
         } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(columns),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            // Обычная раскладка, а не LazyVerticalGrid: у ленивого списка
+            // элемент может переиспользоваться со старым состоянием
+            // «устарело», пока число уже обновилось. Для нескольких десятков
+            // плиток это дешевле, чем ловить такие рассинхронизации.
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(specs, key = { it.signalId }) { spec ->
-                    MetricTile(
-                        spec = spec,
-                        reading = readMetric(
-                            spec = spec,
-                            values = values,
-                            now = now,
-                            canShowData = canShowData,
-                        ),
-                        language = language,
-                        modifier = Modifier.fillMaxWidth().height(tileHeight),
-                    )
+                specs.chunked(columns).forEach { row ->
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        row.forEach { spec ->
+                            MetricTile(
+                                spec = spec,
+                                reading = readMetric(
+                                    spec = spec,
+                                    values = values,
+                                    now = now,
+                                    canShowData = canShowData,
+                                ),
+                                language = language,
+                                modifier = Modifier.weight(1f).height(tileHeight),
+                            )
+                        }
+                        repeat(columns - row.size) {
+                            Spacer(Modifier.weight(1f))
+                        }
+                    }
                 }
             }
         }

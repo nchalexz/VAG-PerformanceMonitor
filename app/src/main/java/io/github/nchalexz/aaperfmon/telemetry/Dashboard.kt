@@ -58,13 +58,13 @@ object Dashboards {
         title = "Движение",
         widgets = listOf(
             widget(SignalCatalog.Ids.COOLANT, WidgetKind.DIAL, 40.0, 120.0, 110.0, title = "ОЖ"),
-            widget(SignalCatalog.Ids.BOOST, WidgetKind.DIAL, -100.0, 250.0, 200.0, title = "Наддув"),
+            widget(SignalCatalog.Ids.MAP, WidgetKind.DIAL, 0.0, 250.0, 230.0, title = "Наддув абс."),
             widget(SignalCatalog.Ids.OIL_TEMP, WidgetKind.DIAL, 40.0, 160.0, 140.0, title = "Масло"),
-            widget(SignalCatalog.Ids.SPEED, WidgetKind.TILE, title = "Скорость"),
-            widget(SignalCatalog.Ids.RPM, WidgetKind.TILE, title = "Обороты"),
-            widget(SignalCatalog.Ids.GEAR, WidgetKind.TILE),
-            widget(SignalCatalog.Ids.FUEL_RATE, WidgetKind.TILE, title = "Расход"),
-            widget(SignalCatalog.Ids.FUEL_LEVEL, WidgetKind.TILE, title = "Топливо"),
+            widget("vag.7e1.2104.atf_temp", WidgetKind.TILE, title = "Темп. DSG"),
+            widget(SignalCatalog.Ids.INTAKE_AIR, WidgetKind.TILE, title = "Впуск"),
+            widget("vag.7e0.10fb.egt1", WidgetKind.TILE, title = "Выхлоп"),
+            widget(SignalCatalog.Ids.VOLTAGE, WidgetKind.TILE, title = "Напряжение"),
+            widget(SignalCatalog.Ids.RAIL_PRESSURE, WidgetKind.TILE, title = "Рампа"),
         ),
     )
 
@@ -73,11 +73,11 @@ object Dashboards {
         id = "performance",
         title = "Динамика",
         widgets = listOf(
-            widget(SignalCatalog.Ids.BOOST, WidgetKind.DIAL, -100.0, 250.0, 200.0),
+            widget(SignalCatalog.Ids.MAP, WidgetKind.DIAL, 0.0, 250.0, 230.0, title = "Наддув абс."),
             widget(SignalCatalog.Ids.POWER_KW, WidgetKind.DIAL, 0.0, 300.0, 240.0),
             widget(SignalCatalog.Ids.TORQUE_NM, WidgetKind.DIAL, 0.0, 500.0, 450.0),
             widget(SignalCatalog.Ids.RPM, WidgetKind.TILE, title = "Обороты"),
-            widget(SignalCatalog.Ids.LOAD, WidgetKind.TILE, title = "Нагрузка"),
+            widget("vag.7e0.10fb.egt1", WidgetKind.TILE, title = "Выхлоп"),
             widget(SignalCatalog.Ids.RAIL_PRESSURE, WidgetKind.TILE, title = "Топливо"),
             widget(SignalCatalog.Ids.INTAKE_AIR, WidgetKind.TILE, title = "Впуск"),
             widget(SignalCatalog.Ids.COOLANT, WidgetKind.TILE, title = "ОЖ"),

@@ -88,7 +88,7 @@ class TelemetrySnapshotTest {
     @Test
     fun `old reading is stale, single failed attempt keeps the number`() {
         val stale = TelemetrySnapshot.build(
-            state(values = mapOf(value(SignalCatalog.Ids.COOLANT, 86.0, now - 60_000))),
+            state(values = mapOf(value(SignalCatalog.Ids.COOLANT, 86.0, now - 400_000))),
             now,
         ).signal(SignalCatalog.Ids.COOLANT)!!
         assertTrue(stale.stale)
@@ -219,9 +219,10 @@ class TelemetrySnapshotTest {
             SignalCatalog.Ids.OIL_TEMP,
             SignalCatalog.Ids.SPEED,
             SignalCatalog.Ids.RPM,
-            SignalCatalog.Ids.GEAR,
-            SignalCatalog.Ids.FUEL_L100,
-            SignalCatalog.Ids.FUEL_LEVEL,
+            SignalCatalog.Ids.VOLTAGE,
+            SignalCatalog.Ids.RAIL_PRESSURE,
+            "vag.7e1.2104.atf_temp",
+            "vag.7e0.10fb.egt1",
         ).forEach { assertNotNull("missing $it", snapshot.signal(it)) }
     }
 

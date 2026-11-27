@@ -120,7 +120,14 @@ class CockpitViewModel(application: Application) : AndroidViewModel(application)
         // Основные источники опрашиваются в первую очередь, запасные
         // (VAG DID вместо молчащего PID) — в фоне. Иначе медленный
         // многокадровый обмен отбирает шину у стрелок.
-        Telemetry.subscribe(SUBSCRIPTION, visible.map { it.signalId })
+        // Запасные источники колодцев идут в основную подписку: масло на
+        // дизеле часто есть только в блоке, и ждать его пять секунд в фоне
+        // нельзя. Если основной PID отвечает, движок сам приглушит запасной.
+        val gaugeIds = MetricRegistry.gauges.map { it.signalId }.toSet()
+        val foregroundAlternatives = visible
+            .filter { it.signalId in gaugeIds }
+            .flatMap { spec -> spec.alternatives.map { it.signalId } }
+        Telemetry.subscribe(SUBSCRIPTION, visible.map { it.signalId } + foregroundAlternatives)
         Telemetry.subscribe(
             ALT_SUBSCRIPTION,
             visible.flatMap { spec -> spec.alternatives.map { it.signalId } },

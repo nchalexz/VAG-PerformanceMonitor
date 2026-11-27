@@ -523,8 +523,8 @@ private fun SavedValueRow(id: String, value: SignalValue?, now: Long) {
         Text(definition.nameRu, color = DimColor, fontSize = 12.sp, modifier = Modifier.weight(1f))
         Text(
             when (status) {
-                SignalStatus.NEVER_READ -> "N/A"
-                SignalStatus.STALE -> "— устарело"
+                SignalStatus.NEVER_READ -> "—"
+                SignalStatus.STALE -> "${definition.format(value?.value)} ${definition.unit} · устарело"
                 SignalStatus.VALID -> "${definition.format(value?.value)} ${definition.unit}"
             },
             color = if (status == SignalStatus.VALID) TextColor else DimColor,

@@ -116,8 +116,9 @@ private class TelemetryScreen(carContext: androidx.car.app.CarContext) : Screen(
                 val status = value?.statusAt(now, definition) ?: SignalStatus.NEVER_READ
                 val text = when (status) {
                     SignalStatus.VALID -> "${definition.format(value?.value)} ${definition.unit}".trim()
-                    SignalStatus.NEVER_READ -> "N/A"
-                    SignalStatus.STALE -> "—"
+                    SignalStatus.STALE ->
+                        "${definition.format(value?.value)} ${definition.unit} · устарело".trim()
+                    SignalStatus.NEVER_READ -> "—"
                 }
                 list.addItem(
                     Row.Builder()

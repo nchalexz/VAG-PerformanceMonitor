@@ -303,6 +303,7 @@ object Telemetry {
             metrics = diagnosticsSnapshot(),
             schedule = scheduleSnapshot(),
             events = diagnosticsEvents(),
+            rawLog = AdapterHolder.elm?.rawLog.orEmpty(),
         )
     }
 
