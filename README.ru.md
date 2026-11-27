@@ -9,7 +9,7 @@
 <p align="center"><sub>Полный русский перевод <a href="README.md">английского README</a>.</sub></p>
 
 <p align="center">
-  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Версия 0.6.2" src="https://img.shields.io/badge/version-0.6.2-E5484D?style=flat-square"></a>
+  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Версия 0.6.3" src="https://img.shields.io/badge/version-0.6.3-E5484D?style=flat-square"></a>
   <a href="LICENSE"><img alt="Лицензия MIT" src="https://img.shields.io/badge/license-MIT-38BDF8?style=flat-square"></a>
   <a href="COMPATIBILITY.md"><img alt="Android 7.0+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white"></a>
   <a href="build.gradle.kts"><img alt="Kotlin 2.2" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?style=flat-square&logo=kotlin&logoColor=white"></a>
@@ -38,15 +38,17 @@
 </p>
 
 > [!WARNING]
-> **0.6.2 — тестовая сборка, а не готовый продукт.**
+> **0.6.3 — тестовая сборка, а не готовый продукт.**
 > 0.6.2 подключалась к реальной машине через Bluetooth-адаптер **OBDII**:
 > холостой ход 770 об/мин, 0 км/ч, ОЖ 78 °C, масло 84 °C, абсолютный наддув
 > 0,98 бар, DSG 73 °C, впуск 42 °C, выхлоп 152 °C, 14,4 В, рампа 314 бар.
 > Поездка, головное устройство и Android Auto не проверялись. Подробности —
-> в разделе [«Что проверено, а что нет»](#что-проверено-а-что-нет).
+> В **0.6.3** добавлены multi-PID, MAP 20 Гц и тест стрелок 1,8 с; эти изменения опроса
+> на машине ещё не проверены. Подробности — в разделе
+> [«Что проверено, а что нет»](#что-проверено-а-что-нет).
 
 > [!NOTE]
-> 0.6.2 — приборка защиты: на колодцах ОЖ, абсолютный наддув и масло;
+> 0.6.3 — приборка защиты: на колодцах ОЖ, абсолютный наддув и масло;
 > на плитках температура DSG, температура впуска, температура выхлопа,
 > напряжение и давление в рампе. Температуры опрашиваются первыми и
 > устаревают через 30 секунд; устаревшее число остаётся, в углу горит
@@ -288,18 +290,18 @@ Google Mobile Services не нужны.
 
 ```sh
 # обычная сборка
-adb install -r VAG-Performance-Monitor-0.6.2-standard.apk
+adb install -r VAG-Performance-Monitor-0.6.3-standard.apk
 
 # сборка с Android Auto
-adb install -r VAG-Performance-Monitor-0.6.2-AA.apk
+adb install -r VAG-Performance-Monitor-0.6.3-AA.apk
 ```
 
 <details>
 <summary>Контрольные суммы SHA-256</summary>
 
 ```text
-a5556b4728da81aefdf1cc9fdbe339aa8a8cb71fccabb4244aef6d12bf21700f  VAG-Performance-Monitor-0.6.2-standard.apk
-1b95364b688e4cb2fd5702bcac0430cada920800f2ea73ec695250a5473451b1  VAG-Performance-Monitor-0.6.2-AA.apk
+943a7d9230f4f81032c85a3c733554ede069591ef1dc4b067480885a39c864dc  VAG-Performance-Monitor-0.6.3-standard.apk
+2515cc95ef991b44d620f8333a6a08047c07a68a9fc09696cf73291d5fe8be2e  VAG-Performance-Monitor-0.6.3-AA.apk
 certificate SHA-256: 2a143c3b8facd71e3d2340343fa675504b2d547361de71c01f3e560f926e23ea
 ```
 

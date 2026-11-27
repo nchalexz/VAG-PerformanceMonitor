@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Version 0.6.2" src="https://img.shields.io/badge/version-0.6.2-E5484D?style=flat-square"></a>
+  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Version 0.6.3" src="https://img.shields.io/badge/version-0.6.3-E5484D?style=flat-square"></a>
   <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/license-MIT-38BDF8?style=flat-square"></a>
   <a href="#install"><img alt="Android 7.0+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white"></a>
   <a href="build.gradle.kts"><img alt="Kotlin 2.2" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?style=flat-square&logo=kotlin&logoColor=white"></a>
@@ -36,21 +36,22 @@
 </p>
 
 > [!WARNING]
-> **0.6.2 is a test build, not a verified release.**
+> **0.6.3 is a test build, not a verified release.**
 > 0.6.2 was connected to a real car through a Bluetooth **OBDII** adapter: idle 770 rpm, 0 km/h,
 > coolant 78 °C, oil 84 °C, absolute boost 0.98 bar, DSG 73 °C, intake 42 °C, EGT 152 °C,
 > 14.4 V, rail 314 bar. Driving, a phone call, Android Auto and a head unit are still untested.
-> See [What is tested](#what-is-tested-what-is-not).
+> **0.6.3** adds multi-PID polling, 20 Hz MAP and a 1.8 s needle test; those polling changes are
+> not yet verified on a car. See [What is tested](#what-is-tested-what-is-not).
 
 > [!NOTE]
-> 0.6.2 turns the main screen into a protection panel: coolant, absolute boost and oil temperature
+> 0.6.3 turns the main screen into a protection panel: coolant, absolute boost and oil temperature
 > in the three gauges; DSG temperature, intake air, exhaust gas, voltage and rail pressure in the
 > five tiles. Temperatures are polled first and go stale after 30 s; a stale value keeps its number
 > and lights a red dot. The chosen adapter is remembered, and Bluetooth clones that drop the secure
 > SPP socket now connect through insecure or channel-1 fallbacks.
 
 > [!NOTE]
-> **По-русски.** 0.6.2 — приборка защиты: ОЖ, абсолютный наддув и масло
+> **По-русски.** 0.6.3 — приборка защиты: ОЖ, абсолютный наддув и масло
 > на колодцах; температура DSG, впуска, выхлопа, напряжение и давление
 > в рампе на плитках. Температуры опрашиваются первыми и устаревают через
 > 30 секунд; устаревшее число остаётся, в углу горит красный кружок.
@@ -252,18 +253,18 @@ Through `adb`:
 
 ```sh
 # standard build
-adb install -r VAG-Performance-Monitor-0.6.2-standard.apk
+adb install -r VAG-Performance-Monitor-0.6.3-standard.apk
 
 # Android Auto build
-adb install -r VAG-Performance-Monitor-0.6.2-AA.apk
+adb install -r VAG-Performance-Monitor-0.6.3-AA.apk
 ```
 
 <details>
 <summary>SHA-256 and signing certificate</summary>
 
 ```text
-a5556b4728da81aefdf1cc9fdbe339aa8a8cb71fccabb4244aef6d12bf21700f  VAG-Performance-Monitor-0.6.2-standard.apk
-1b95364b688e4cb2fd5702bcac0430cada920800f2ea73ec695250a5473451b1  VAG-Performance-Monitor-0.6.2-AA.apk
+943a7d9230f4f81032c85a3c733554ede069591ef1dc4b067480885a39c864dc  VAG-Performance-Monitor-0.6.3-standard.apk
+2515cc95ef991b44d620f8333a6a08047c07a68a9fc09696cf73291d5fe8be2e  VAG-Performance-Monitor-0.6.3-AA.apk
 certificate SHA-256: 2a143c3b8facd71e3d2340343fa675504b2d547361de71c01f3e560f926e23ea
 ```
 
@@ -293,7 +294,7 @@ The APKs are signed with the Android Debug key (`CN=Android Debug`). Check with
 1. Connect the adapter over Wi-Fi, Bluetooth or USB.
 2. Open **Vehicle and adapter**, choose the adapter type and address, then tap **Connect**. The
    diagnostics screen can also connect.
-3. Return to the dashboard: the badge changes to **LIVE** and the header shows the channel and
+3. Return to the dashboard: the badge changes to **Live** and the header shows the channel and
    voltage.
 4. Compare RPM, speed and coolant temperature with the car’s own cluster.
 
