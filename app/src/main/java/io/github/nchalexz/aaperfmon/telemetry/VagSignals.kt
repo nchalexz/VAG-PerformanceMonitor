@@ -388,7 +388,7 @@ object VagSignals {
             decimals = 0,
             min = -273.1,
             max = 6280.4,
-            pollHz = 1.0,
+            pollHz = 2.0,
         ),
         uds(
             id = "vag.7e0.179c.oil_temp2",
@@ -478,7 +478,7 @@ object VagSignals {
             decimals = 0,
             min = -3549.9,
             max = 3003.6,
-            pollHz = 1.0,
+            pollHz = 2.0,
         ),
         uds(
             id = "vag.7e0.14f7.egt2",

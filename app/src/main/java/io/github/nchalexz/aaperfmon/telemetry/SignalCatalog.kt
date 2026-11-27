@@ -137,7 +137,7 @@ object SignalCatalog {
         add(
             obd(
                 Ids.MAP, "Давление во впуске", "Intake manifold absolute pressure",
-                SignalCategory.ENGINE, 0x0B, ratio(scale = 1.0), "кПа", 0, 0.0, 255.0, 5.0,
+                SignalCategory.ENGINE, 0x0B, ratio(scale = 1.0), "кПа", 0, 0.0, 255.0, 20.0,
             )
         )
         add(
@@ -232,14 +232,14 @@ object SignalCatalog {
             obd(
                 Ids.COOLANT, "Охлаждающая жидкость", "Engine coolant temperature",
                 SignalCategory.TEMPERATURES, 0x05, ValueSpec(length = 1, bias = -40.0),
-                "°C", 0, -40.0, 130.0, 1.0,
+                "°C", 0, -40.0, 130.0, 2.0,
             )
         )
         add(
             obd(
                 Ids.OIL_TEMP, "Масло двигателя", "Engine oil temperature",
                 SignalCategory.TEMPERATURES, 0x5C, ValueSpec(length = 1, bias = -40.0),
-                "°C", 0, -40.0, 160.0, 0.5,
+                "°C", 0, -40.0, 160.0, 2.0,
                 note = "Поддерживается не всеми блоками; при отсутствии показывается «—».",
             )
         )
@@ -247,7 +247,7 @@ object SignalCatalog {
             obd(
                 Ids.INTAKE_AIR, "Воздух на впуске", "Intake air temperature",
                 SignalCategory.TEMPERATURES, 0x0F, ValueSpec(length = 1, bias = -40.0),
-                "°C", 0, -40.0, 120.0, 1.0,
+                "°C", 0, -40.0, 120.0, 2.0,
             )
         )
         add(
@@ -496,6 +496,10 @@ object SignalCatalog {
         Ids.COOLANT to SignalPriority.P0,
         Ids.INTAKE_AIR to SignalPriority.P0,
         "vag.7e0.10fb.egt1" to SignalPriority.P0,
+        // Масло на дизеле часто есть только в блоке; это запасной источник
+        // главного прибора, поэтому он не должен голодать за MAP.
+        "vag.7e0.11be.oil_temp" to SignalPriority.P0,
+        "vag.714.202f.oil_temp" to SignalPriority.P0,
         Ids.LOAD to SignalPriority.P1,
         Ids.VOLTAGE to SignalPriority.P1,
         Ids.RAIL_PRESSURE to SignalPriority.P1,
@@ -588,7 +592,7 @@ object SignalCatalog {
                     display = if (gear) ValueDisplay.GEAR else definition.display,
                     staleMs = if (dsg) 30_000L else (stale ?: definition.staleMs),
                     fast = fast || definition.fast,
-                    pollHz = if (dsg) 1.0 else definition.pollHz,
+                    pollHz = if (dsg) 2.0 else definition.pollHz,
                 )
             }
         }

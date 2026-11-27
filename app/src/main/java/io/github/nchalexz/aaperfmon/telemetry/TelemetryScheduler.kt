@@ -26,7 +26,7 @@ class TelemetryScheduler(
 
     /** Числовые настройки планировщика. Вынесены сюда ради тестов. */
     data class Config(
-        val minIntervalMs: Long = 60L,
+        val minIntervalMs: Long = 40L,
         val maxIntervalMs: Long = 30_000L,
         val maxBackoffMs: Long = 15_000L,
         /** Как часто перепроверять параметр, который ни разу не ответил. */
@@ -41,6 +41,8 @@ class TelemetryScheduler(
         val starvationMs: Long = 3_000L,
         /** Сколько DID можно попросить одним запросом. */
         val batchLimit: Int = 2,
+        /** Сколько обычных OBD-PID (mode 01) можно попросить одной командой. */
+        val obdBatchLimit: Int = 4,
         /**
          * Минимальный интервал фоновых сигналов (виджет, профиль).
          *
@@ -180,6 +182,21 @@ class TelemetryScheduler(
                 }
                 .sortedWith(compareBy({ rank(it, now) }, { nextAttemptAt(it) }, { it.definition.id }))
                 .take(limit - 1)
+                .toList()
+            group.forEach { batch += it.definition }
+        } else if (!leader.definition.isUds && limit > 1 &&
+            leader.definition.pid?.let { ObdPayload.mode01Length(it) } != null
+        ) {
+            // One mode-01 request can carry several PIDs; the response is one 41 block.
+            // Only PIDs with a known byte length can be split reliably.
+            val group = due.asSequence()
+                .filter { it !== leader }
+                .filter { candidate ->
+                    val definition = candidate.definition
+                    !definition.isUds && definition.pid?.let { ObdPayload.mode01Length(it) } != null
+                }
+                .sortedWith(compareBy({ rank(it, now) }, { nextAttemptAt(it) }, { it.definition.id }))
+                .take((config.obdBatchLimit - 1).coerceAtLeast(0))
                 .toList()
             group.forEach { batch += it.definition }
         }
@@ -362,10 +379,11 @@ class TelemetryScheduler(
     private fun effectiveIntervalMs(entry: Entry): Long {
         var interval = maxOf(baseIntervalMs(entry), entry.intervalFloorMs)
         if (entry.latencyEwmaMs > 0.0) {
-            interval = maxOf(
-                interval,
-                Math.ceil(entry.latencyEwmaMs * config.latencyFactor).toLong(),
-            )
+            // The boost fast lane follows the pedal, so it uses the real
+            // response time without the 15 % safety margin; the bus latency
+            // itself is still the floor.
+            val factor = if (entry.definition.fast) 1.0 else config.latencyFactor
+            interval = maxOf(interval, Math.ceil(entry.latencyEwmaMs * factor).toLong())
         }
         if (entry.priority != SignalPriority.P0) {
             interval = (interval * saturationFactor()).toLong()

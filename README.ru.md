@@ -18,6 +18,10 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases/latest"><img alt="Скачать последний стабильный релиз" src="https://img.shields.io/badge/Download-latest%20stable-E5484D?style=for-the-badge&logo=android&logoColor=white"></a>
+</p>
+
+<p align="center">
   <strong>Расширенная телеметрия Volkswagen, Audi, Škoda, Seat и Cupra через обычный ELM327.</strong><br>
   Приборка, виджет и автомобильный экран на одном соединении. Без GMS, регистрации и облака.
 </p>

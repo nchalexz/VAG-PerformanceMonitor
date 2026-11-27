@@ -61,6 +61,16 @@ class SignalCatalogTest {
     }
 
     @Test
+    fun `boost is the fast lane and the temperatures are sampled at 2 Hz`() {
+        val boost = SignalCatalog.get(SignalCatalog.Ids.MAP)!!
+        assertEquals(20.0, boost.pollHz, 0.0)
+        assertTrue("MAP должен идти вне очереди", boost.fast)
+        assertEquals(2.0, SignalCatalog.get(SignalCatalog.Ids.COOLANT)!!.pollHz, 0.0)
+        assertEquals(2.0, SignalCatalog.get(SignalCatalog.Ids.OIL_TEMP)!!.pollHz, 0.0)
+        assertEquals(2.0, SignalCatalog.get(SignalCatalog.Ids.INTAKE_AIR)!!.pollHz, 0.0)
+    }
+
+    @Test
     fun `verification is not overclaimed`() {
         // Стандартные PID не могут быть CONFIRMED без живой машины.
         val confirmed = SignalCatalog.all.filter { it.verification == Verification.CONFIRMED }

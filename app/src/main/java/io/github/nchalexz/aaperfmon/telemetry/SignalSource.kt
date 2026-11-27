@@ -320,6 +320,9 @@ class Elm327SignalSource(
     /** Был ли включён фильтр ответа при дочитывании многокадрового UDS. */
     private var udsFilterActive = false
 
+    /** null — ещё не проверяли; false — адаптер не понял пакет mode 01. */
+    private var obdBatchSupport: Boolean? = null
+
     /**
      * Поддерживает ли блок пакетный `22 DID1 DID2 ...`.
      *
@@ -359,6 +362,15 @@ class Elm327SignalSource(
 
     private fun readGroup(definitions: List<SignalDefinition>): Map<String, Reading> {
         val first = definitions.first()
+        val allObd = definitions.all { definition ->
+            !definition.isUds && definition.pid?.let { ObdPayload.mode01Length(it) } != null
+        }
+        if (allObd) {
+            if (obdBatchSupport == false) {
+                return definitions.associate { it.id to readOne(it) }
+            }
+            return readObdBatch(definitions)
+        }
         val sameBlock = definitions.all { it.isUds && it.txId == first.txId }
         val dids = definitions.mapNotNull { it.did }.distinct()
         if (!sameBlock || first.txId == null || dids.size < 2) {
@@ -458,6 +470,75 @@ class Elm327SignalSource(
         return (spec.bitOffset + spec.bitLength + 7) / 8
     }
 
+    /** Общий фильтр mode 01: 7DF и приём всех ответов. */
+    private fun prepareObd() {
+        if (!filtersPrepared) {
+            elm.acceptAll()
+            filtersPrepared = true
+        }
+        if (udsFilterActive) {
+            elm.clearRxFilter()
+            udsFilterActive = false
+        }
+        if (elm.header != 0x7DF) elm.setHeader(0x7DF)
+    }
+
+    /**
+     * One mode-01 command with up to four PIDs (`01 0B 0C 05 0D`).
+     *
+     * The ECU answers with a single `41` block carrying the PIDs in request
+     * order. If the adapter or the block does not understand the batch, the
+     * first failure disables batching for this connection and the caller falls
+     * back to single requests; the rest of the session is unaffected.
+     */
+    private fun readObdBatch(definitions: List<SignalDefinition>): Map<String, Reading> {
+        val pids = definitions.mapNotNull { it.pid }.distinct()
+        val command = "01" + pids.joinToString("") { "%02X".format(it) }
+        val lines = try {
+            synchronized(elm) {
+                prepareObd()
+                elm.command(command, timeoutMs)
+            }
+        } catch (_: Exception) {
+            return definitions.associate {
+                it.id to Reading(null, ReadingState.ERROR, ReadingFailure.TRANSPORT)
+            }
+        }
+        if (lines.isEmpty() || IsoTp.isNegative(lines)) {
+            if (obdBatchSupport == null) {
+                obdBatchSupport = false
+                return definitions.associate { it.id to readOne(it) }
+            }
+            val unsupported = IsoTp.isNegative(lines)
+            return definitions.associate {
+                it.id to if (unsupported) {
+                    Reading(null, ReadingState.UNSUPPORTED, ReadingFailure.NEGATIVE)
+                } else {
+                    Reading(null, ReadingState.ERROR, ReadingFailure.TIMEOUT)
+                }
+            }
+        }
+        val parsed = ObdPayload.mode01Batch(lines, pids.toSet())
+        if (parsed.isEmpty()) {
+            if (obdBatchSupport == null) {
+                obdBatchSupport = false
+                return definitions.associate { it.id to readOne(it) }
+            }
+            return definitions.associate {
+                it.id to Reading(null, ReadingState.UNSUPPORTED, ReadingFailure.NEGATIVE)
+            }
+        }
+        obdBatchSupport = true
+        return definitions.associate { definition ->
+            val value = definition.pid?.let { parsed[it] }?.let { definition.decode?.decode(it) }
+            definition.id to if (value == null) {
+                Reading(null, ReadingState.UNSUPPORTED, ReadingFailure.NEGATIVE)
+            } else {
+                Reading(value, ReadingState.OK)
+            }
+        }
+    }
+
     private fun readObd(definition: SignalDefinition): Reading {
         val pid = definition.pid ?: return Reading(null, ReadingState.UNSUPPORTED)
         // Диагностика могла оставить заголовок последнего найденного блока.
@@ -468,15 +549,7 @@ class Elm327SignalSource(
             // Заголовок и запрос — одна операция. Диагностика делит этот же
             // адаптер и не должна вклиниться между ATSH и PID.
             synchronized(elm) {
-                if (!filtersPrepared) {
-                    elm.acceptAll()
-                    filtersPrepared = true
-                }
-                if (udsFilterActive) {
-                    elm.clearRxFilter()
-                    udsFilterActive = false
-                }
-                if (elm.header != 0x7DF) elm.setHeader(0x7DF)
+                prepareObd()
                 elm.command(command, timeoutMs)
             }
         } catch (_: Exception) {

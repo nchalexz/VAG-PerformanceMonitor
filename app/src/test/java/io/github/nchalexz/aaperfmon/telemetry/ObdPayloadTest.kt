@@ -59,6 +59,28 @@ class ObdPayloadTest {
     }
 
     @Test
+    fun `one response carries map rpm and coolant`() {
+        val parsed = ObdPayload.mode01Batch(
+            listOf("41 0B 62 0C 1A F8 05 56"),
+            setOf(0x0B, 0x0C, 0x05),
+        )
+        assertArrayEquals(byteArrayOf(0x62), parsed[0x0B])
+        assertArrayEquals(byteArrayOf(0x1A, 0xF8.toByte()), parsed[0x0C])
+        assertArrayEquals(byteArrayOf(0x56), parsed[0x05])
+    }
+
+    @Test
+    fun `a short batch answer drops only the missing pid`() {
+        val parsed = ObdPayload.mode01Batch(
+            listOf("41 0B 62 05 56"),
+            setOf(0x0B, 0x0C, 0x05),
+        )
+        assertArrayEquals(byteArrayOf(0x62), parsed[0x0B])
+        assertArrayEquals(byteArrayOf(0x56), parsed[0x05])
+        assertNull(parsed[0x0C])
+    }
+
+    @Test
     fun `uds did payload is extracted`() {
         val lines = listOf("7E8 10 0A 62 F1 90 57 56 57")
         assertArrayEquals(

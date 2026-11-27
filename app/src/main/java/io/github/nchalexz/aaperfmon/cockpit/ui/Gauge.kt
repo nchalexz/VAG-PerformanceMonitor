@@ -3,8 +3,10 @@ package io.github.nchalexz.aaperfmon.cockpit.ui
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.Typeface
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -115,9 +117,11 @@ fun CircularGauge(
             val target = if (hasValue) (reading.fraction ?: lastFraction) else lastFraction
             // Короткий переход: стрелка должна успевать за педалью, а не
             // догонять её через полсекунды после следующего отсчёта.
+            // Spring: a large jump settles smoothly instead of snapping in 45 ms, while
+            // small corrections still arrive immediately.
             val needle by animateFloatAsState(
                 targetValue = target,
-                animationSpec = tween(durationMillis = 90, easing = LinearEasing),
+                animationSpec = spring(dampingRatio = 1f, stiffness = 1400f),
                 label = "needle",
             )
             val needleAlpha by animateFloatAsState(
@@ -129,6 +133,32 @@ fun CircularGauge(
                 animationSpec = tween(durationMillis = 200),
                 label = "needle-alpha",
             )
+            // Ignition test: the needle sweeps the whole scale and settles on the reading when
+            // the cockpit opens. It runs once per composition, not on every poll.
+            val sweepStart = remember { CockpitStartupSweep.start() }
+            val initialSweep = CockpitStartupSweep.elapsedFraction(sweepStart)
+            val startup = remember(spec.signalId, sweepStart) { Animatable(initialSweep) }
+            LaunchedEffect(spec.signalId, sweepStart) {
+                if (initialSweep < 1f) {
+                    startup.animateTo(
+                        1f,
+                        tween(
+                            durationMillis = ((1f - initialSweep) * CockpitStartupSweep.DURATION_MS).toInt(),
+                            easing = LinearEasing,
+                        ),
+                    )
+                }
+            }
+            val sweep = startup.value
+            val sweeping = sweep < 1f
+            fun smooth(x: Float): Float = x * x * (3f - 2f * x)
+            val shownNeedle = when {
+                !sweeping -> needle
+                sweep < 0.45f -> smooth((sweep / 0.45f).coerceIn(0f, 1f))
+                sweep < 0.55f -> 1f
+                else -> 1f - smooth(((sweep - 0.55f) / 0.45f).coerceIn(0f, 1f)) * (1f - needle)
+            }
+            val shownAlpha = if (sweeping) 1f else needleAlpha
 
             Box(
                 Modifier.size(side)
@@ -136,7 +166,7 @@ fun CircularGauge(
                 contentAlignment = Alignment.Center,
             ) {
                 Canvas(Modifier.fillMaxSize()) {
-                    drawGauge(spec, needle, needleAlpha, colors)
+                    drawGauge(spec, shownNeedle, shownAlpha, colors)
                     drawValue(paint, reading, colors)
                 }
 
@@ -370,7 +400,7 @@ fun MetricTile(
         val h = maxHeight.value
         val labelSize = (w * 0.036f).coerceIn(10f, 14f).sp
         val unitSize = (w * 0.030f).coerceIn(10f, 13f).sp
-        val valueSize = minOf(w * 0.16f, h * 0.36f).coerceIn(18f, 58f).sp
+        val valueSize = minOf(w * 0.19f, h * 0.40f).coerceIn(20f, 64f).sp
         Column(
             Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

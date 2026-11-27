@@ -237,15 +237,18 @@ class TelemetrySchedulerTest {
     }
 
     @Test
-    fun `obd pids are never batched`() {
+    fun `obd pids with known lengths are batched`() {
         val scheduler = scheduler()
         scheduler.setDemand(
             listOf(
                 TelemetryScheduler.Demand(SignalCatalog.Ids.RPM),
                 TelemetryScheduler.Demand(SignalCatalog.Ids.SPEED),
+                TelemetryScheduler.Demand(SignalCatalog.Ids.COOLANT),
             ),
         )
-        assertEquals(1, scheduler.nextDueBatch(now).size)
+        val batch = scheduler.nextDueBatch(now)
+        assertEquals(3, batch.size)
+        assertTrue(batch.all { !it.isUds })
     }
 
     @Test
