@@ -23,3 +23,17 @@ python3 tools/obdb_import.py
 
 Данные OBDb распространяются по CC BY-SA 4.0; атрибуция — в
 `THIRD_PARTY_NOTICES.md`. Код приложения остаётся под MIT.
+
+## Баннер README
+
+`render_banner.py` собирает `docs/assets/banner-en.png` (1600×600) для
+английского README. В баннере одно окно с реальным скриншотом
+`screen-driving.png`; кодом нарисованы только фон, мягкая тень и подписи,
+без рамок и обводок. Это не макет интерфейса и не снимок устройства:
+данные на экране — Demo Mode.
+
+Нужны Pillow и NumPy. Перегенерация:
+
+```bash
+python3 tools/render_banner.py
+```

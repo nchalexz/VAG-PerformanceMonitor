@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="VAG Performance Monitor — VAG telemetry through an ordinary ELM327" width="100%">
+  <img src="docs/assets/banner-en.png" alt="VAG Performance Monitor — real dashboard screenshot" width="100%">
 </p>
 
 <p align="center">
