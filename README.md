@@ -106,10 +106,6 @@ the dashboard always opens first.
 
 ## Android Auto
 
-<p align="center">
-  <img src="docs/assets/android-auto.png" width="100%" alt="Mockup of the VAG Performance Monitor ListTemplate screen with status and signal rows">
-</p>
-
 <p align="center"><sub>Mockup of the actual <code>ListTemplate</code> composition, not a head-unit screenshot. A real screenshot is not available: the emulator ships stub Android Auto, and neither DHU nor a head unit was tested.</sub></p>
 
 Android Auto is a separate **`aa`** build, not a mode of the standard one. It replaces `standard`
@@ -129,10 +125,6 @@ Android Auto is a separate **`aa`** build, not a mode of the standard one. It re
 More: [docs/AA.md](docs/AA.md) and [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md).
 
 ## One telemetry — three surfaces
-
-<p align="center">
-  <img src="docs/assets/surfaces.svg" alt="0.6.2 mockup of three surfaces: dashboard, widget and Android Auto" width="100%">
-</p>
 
 <p align="center"><sub>A mockup, not screenshots: the dashboard, widget and car screen read one state.</sub></p>
 
@@ -263,8 +255,8 @@ adb install -r VAG-Performance-Monitor-0.6.3-AA.apk
 <summary>SHA-256 and signing certificate</summary>
 
 ```text
-943a7d9230f4f81032c85a3c733554ede069591ef1dc4b067480885a39c864dc  VAG-Performance-Monitor-0.6.3-standard.apk
-2515cc95ef991b44d620f8333a6a08047c07a68a9fc09696cf73291d5fe8be2e  VAG-Performance-Monitor-0.6.3-AA.apk
+9d31789582ee220074ddc9ec99726e70bba8c462bb849c2b6e67775b3c454271  VAG-Performance-Monitor-0.6.3-standard.apk
+297ea8d8b28e4e071d6ff84bdede71da113e5f43589f9b3bdceec658ef08840d  VAG-Performance-Monitor-0.6.3-AA.apk
 certificate SHA-256: 2a143c3b8facd71e3d2340343fa675504b2d547361de71c01f3e560f926e23ea
 ```
 

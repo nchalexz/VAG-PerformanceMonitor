@@ -108,10 +108,6 @@ VAG Performance Monitor — самостоятельное Android-прилож�
 
 ## Android Auto
 
-<p align="center">
-  <img src="docs/assets/android-auto.png" width="100%" alt="Макет экрана Android Auto: список состояния и параметров">
-</p>
-
 <p align="center"><sub>Макет по фактическому шаблону <code>ListTemplate</code>, а не снимок с головного устройства. Реального снимка пока нет: в эмуляторе стоит stub Android Auto, DHU и головное устройство не проверялись.</sub></p>
 
 Android Auto — это отдельная сборка **`aa`**, а не режим обычной. Она
@@ -135,10 +131,6 @@ Android Auto — это отдельная сборка **`aa`**, а не реж
 [`docs/AARE_DASHGRID.md`](docs/AARE_DASHGRID.md).
 
 ## Одна телеметрия — три поверхности
-
-<p align="center">
-  <img src="docs/assets/surfaces.svg" alt="Макет 0.6.2 трёх поверхностей: приборка, виджет, Android Auto" width="100%">
-</p>
 
 <p align="center"><sub>Макет, а не скриншоты: приборка, виджет и шаблон автомобильного экрана читают одно состояние.</sub></p>
 
@@ -300,8 +292,8 @@ adb install -r VAG-Performance-Monitor-0.6.3-AA.apk
 <summary>Контрольные суммы SHA-256</summary>
 
 ```text
-943a7d9230f4f81032c85a3c733554ede069591ef1dc4b067480885a39c864dc  VAG-Performance-Monitor-0.6.3-standard.apk
-2515cc95ef991b44d620f8333a6a08047c07a68a9fc09696cf73291d5fe8be2e  VAG-Performance-Monitor-0.6.3-AA.apk
+9d31789582ee220074ddc9ec99726e70bba8c462bb849c2b6e67775b3c454271  VAG-Performance-Monitor-0.6.3-standard.apk
+297ea8d8b28e4e071d6ff84bdede71da113e5f43589f9b3bdceec658ef08840d  VAG-Performance-Monitor-0.6.3-AA.apk
 certificate SHA-256: 2a143c3b8facd71e3d2340343fa675504b2d547361de71c01f3e560f926e23ea
 ```
 
