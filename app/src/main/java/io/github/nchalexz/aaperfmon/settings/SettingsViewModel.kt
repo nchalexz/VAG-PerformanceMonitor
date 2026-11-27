@@ -34,6 +34,8 @@ data class SettingsForm(
     val port: String = "35000",
     val devices: List<DeviceOption> = emptyList(),
     val selectedDevice: String = "",
+    /** Подпись сохранённого адаптера: видна, пока список устройств не загружен. */
+    val savedDeviceLabel: String = "",
     val profile: VehicleProfile = VehicleProfiles.mqb,
     val message: String = "",
 )
@@ -85,22 +87,28 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             IntentFilter(ACTION_USB_PERMISSION),
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
-        loadDevices()
     }
 
     fun setAdapterType(type: String) {
         _form.update { it.copy(adapterType = type) }
-        loadDevices()
+        rememberSelection()
     }
 
     fun setHost(value: String) = _form.update { it.copy(host = value) }
 
     fun setPort(value: String) = _form.update { it.copy(port = value) }
 
-    fun selectDevice(id: String) = _form.update { it.copy(selectedDevice = id) }
+    fun selectDevice(id: String) {
+        val label = _form.value.devices.firstOrNull { it.id == id }?.label.orEmpty()
+        _form.update { it.copy(selectedDevice = id, savedDeviceLabel = label) }
+        // Выбор запоминается сразу: даже если подключение не удалось,
+        // следующий вход в настройки покажет тот же адаптер.
+        rememberSelection()
+    }
 
     fun connect() {
         val form = _form.value
+        rememberSelection()
         when (form.adapterType) {
             "wifi" -> {
                 val port = form.port.toIntOrNull() ?: 35000
@@ -161,6 +169,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         _message.value = "Адаптер отключён"
     }
 
+    /**
+     * Загружает список только по запросу («Выбрать другой»).
+     *
+     * На старте экрана список не нужен: сохранённый адаптер уже известен,
+     * а перечисление всех спаренных устройств каждый раз только мешает
+     * и требует разрешения Bluetooth до первого нажатия.
+     */
     fun loadDevices() {
         val list = mutableListOf<DeviceOption>()
         when (_form.value.adapterType) {
@@ -182,16 +197,47 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 }
             }
         }
-        _form.update {
-            it.copy(
-                devices = list,
-                selectedDevice = if (it.selectedDevice in list.map { d -> d.id }) {
-                    it.selectedDevice
-                } else {
-                    list.firstOrNull()?.id.orEmpty()
-                },
-            )
+        if (list.isNotEmpty()) {
+            _form.update {
+                val selected = when {
+                    it.selectedDevice in list.map { device -> device.id } -> it.selectedDevice
+                    else -> list.first().id
+                }
+                it.copy(
+                    devices = list,
+                    selectedDevice = selected,
+                    savedDeviceLabel = list.firstOrNull { device -> device.id == selected }?.label
+                        ?: it.savedDeviceLabel,
+                )
+            }
+            if (_form.value.selectedDevice.isNotBlank()) rememberSelection()
         }
+    }
+
+    /** Сохраняет текущий выбор без включения автоподключения. */
+    private fun rememberSelection() {
+        val form = _form.value
+        val config = when (form.adapterType) {
+            "wifi" -> form.host.trim()
+                .takeIf { it.isNotBlank() }
+                ?.let { AdapterConfig.Wifi(it, form.port.toIntOrNull() ?: 35000) }
+            "bluetooth" -> form.selectedDevice
+                .takeIf { it.isNotBlank() }
+                ?.let { id ->
+                    val label = form.devices.firstOrNull { it.id == id }?.label
+                        ?: form.savedDeviceLabel
+                    AdapterConfig.Bluetooth(id, label)
+                }
+            "usb" -> form.selectedDevice
+                .takeIf { it.isNotBlank() }
+                ?.let { id ->
+                    val label = form.devices.firstOrNull { it.id == id }?.label
+                        ?: form.savedDeviceLabel
+                    AdapterConfig.Usb(id, label)
+                }
+            else -> null
+        }
+        if (config != null) AdapterStore.remember(app, config)
     }
 
     // -- профиль ------------------------------------------------------------
@@ -263,6 +309,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             selectedDevice = when (config) {
                 is AdapterConfig.Bluetooth -> config.address
                 is AdapterConfig.Usb -> config.deviceName
+                else -> ""
+            },
+            savedDeviceLabel = when (config) {
+                is AdapterConfig.Bluetooth -> config.name
+                is AdapterConfig.Usb -> config.displayName
                 else -> ""
             },
             profile = VehicleStore.load(app),

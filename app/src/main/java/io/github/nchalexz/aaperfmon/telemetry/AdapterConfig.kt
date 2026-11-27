@@ -33,6 +33,23 @@ object AdapterStore {
     private const val KEY_AUTO = "adapter_auto_connect"
 
     fun save(context: Context, config: AdapterConfig) {
+        write(context, config)
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putBoolean(KEY_AUTO, true)
+            .apply()
+    }
+
+    /**
+     * Запоминает выбранный адаптер, не включая автоподключение.
+     *
+     * Экран настроек вызывает это при выборе устройства: выбор должен
+     * пережить закрытие экрана даже до успешного подключения.
+     */
+    fun remember(context: Context, config: AdapterConfig) {
+        write(context, config)
+    }
+
+    private fun write(context: Context, config: AdapterConfig) {
         val json = when (config) {
             is AdapterConfig.Wifi -> JSONObject()
                 .put("type", "wifi")
@@ -49,7 +66,6 @@ object AdapterStore {
         }
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(KEY_CONFIG, json.toString())
-            .putBoolean(KEY_AUTO, true)
             .apply()
     }
 

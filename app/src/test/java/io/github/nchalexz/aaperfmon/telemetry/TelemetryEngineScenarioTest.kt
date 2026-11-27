@@ -344,6 +344,42 @@ class TelemetryEngineScenarioTest {
     }
 
     @Test
+    fun `virtual signal is not polled on a live source`() = runTest {
+        val source = FakeSource { _, _ -> Reading(null, ReadingState.UNSUPPORTED) }
+        val engine = engine(source)
+        engine.setDashboard(listOf(SignalCatalog.Ids.GEAR))
+        engine.start()
+        advanceTimeBy(2_000)
+        runCurrent()
+
+        assertEquals(0, source.counts[SignalCatalog.Ids.GEAR] ?: 0)
+        assertEquals(
+            SignalStatus.NEVER_READ,
+            engine.values.value[SignalCatalog.Ids.GEAR]
+                ?.statusAt(testScheduler.currentTime, definition(SignalCatalog.Ids.GEAR))
+                ?: SignalStatus.NEVER_READ,
+        )
+        engine.stop()
+    }
+
+    @Test
+    fun `demo source still provides the virtual gear`() = runTest {
+        val source = DemoSignalSource(clock = { testScheduler.currentTime })
+        val engine = TelemetryEngine(
+            source = source,
+            scope = this,
+            clock = { testScheduler.currentTime },
+        )
+        engine.setDashboard(listOf(SignalCatalog.Ids.GEAR))
+        engine.start()
+        advanceTimeBy(500)
+        runCurrent()
+
+        assertEquals(5.0, engine.values.value[SignalCatalog.Ids.GEAR]!!.value!!, 0.0)
+        engine.stop()
+    }
+
+    @Test
     fun `several subscribers share one schedule`() = runTest {
         val source = FakeSource { _, _ -> Reading(2.0, ReadingState.OK) }
         val engine = engine(source)

@@ -194,12 +194,13 @@ class TelemetrySchedulerTest {
         val scheduler = scheduler()
         val boost = SignalCatalog.get("vag.7e0.1057.boost")!!
         val charge = SignalCatalog.get("vag.7e0.2029.charge_specified")!!
-        val gear = SignalCatalog.get("vag.7e1.210f.gear")!!
+        // Не передача: она P1 и увела бы пакет на свой блок.
+        val inputSpeed = SignalCatalog.get("vag.7e1.2102.input_speed")!!
         scheduler.setDemand(
             listOf(
                 TelemetryScheduler.Demand(boost.id),
                 TelemetryScheduler.Demand(charge.id),
-                TelemetryScheduler.Demand(gear.id),
+                TelemetryScheduler.Demand(inputSpeed.id),
             ),
         )
         val batch = scheduler.nextDueBatch(now)

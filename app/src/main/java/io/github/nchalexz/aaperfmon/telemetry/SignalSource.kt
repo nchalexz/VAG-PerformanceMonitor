@@ -24,6 +24,17 @@ data class Reading(
  */
 interface SignalSource {
     val label: String
+
+    /**
+     * Умеет ли источник отдавать виртуальные сигналы.
+     *
+     * Демо-модель отдаёт передачу, а настоящий ELM327 её не читает:
+     * стандартного PID для передачи нет. Поэтому на живом источнике
+     * виртуальные сигналы не попадают в очередь — они только тратили бы
+     * запросы и показывали «не поддерживается» вместо N/A.
+     */
+    val providesVirtualSignals: Boolean get() = false
+
     suspend fun read(definition: SignalDefinition): Reading
 
     /**
@@ -52,6 +63,8 @@ class DemoSignalSource(
 ) : SignalSource {
 
     override val label: String = "ДЕМО"
+
+    override val providesVirtualSignals: Boolean = true
 
     /**
      * Отсчёт от запуска источника, а не от начала эпохи: при старте модель

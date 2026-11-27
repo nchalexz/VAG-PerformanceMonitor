@@ -499,6 +499,8 @@ object SignalCatalog {
         Ids.GEAR to SignalPriority.P1,
         Ids.PEDAL to SignalPriority.P1,
         Ids.FUEL_PRESSURE to SignalPriority.P1,
+        // Передачу настоящий блок отдаёт только по DID 210F.
+        "vag.7e1.210f.gear" to SignalPriority.P1,
     )
 
     /**

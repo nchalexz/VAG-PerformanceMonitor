@@ -374,6 +374,9 @@ class TelemetryEngine(
         val result = LinkedHashMap<String, SignalPriority>()
         fun visit(id: String, inherited: SignalPriority?) {
             val definition = index[id] ?: return
+            // Живой источник не умеет отдавать virtual-сигналы (передачу):
+            // в очередь они не попадают, иначе каждый опрос — впустую.
+            if (definition.protocol == Protocol.VIRTUAL && !source.providesVirtualSignals) return
             val own = definition.priority
             val priority = if (inherited == null || inherited.ordinal < own.ordinal) inherited ?: own else own
             if (definition.isComputed) {

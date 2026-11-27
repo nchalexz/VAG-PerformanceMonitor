@@ -466,11 +466,24 @@ private fun DevicePicker(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selected = form.devices.firstOrNull { it.id == form.selectedDevice }
+    // Пока список не открывали, показываем запомненный адаптер, а не
+    // «Выберите устройство»: перечислять все спаренные устройства при
+    // каждом входе в настройки не нужно.
+    val label = selected?.label
+        ?: form.savedDeviceLabel.takeIf { it.isNotBlank() }
+        ?: form.selectedDevice.takeIf { it.isNotBlank() }
+        ?: "Выберите устройство"
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.weight(1f)) {
-            OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(
+                onClick = {
+                    onRefresh()
+                    expanded = true
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 Text(
-                    selected?.label ?: "Выберите устройство",
+                    label,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     fontSize = 12.sp,
@@ -479,7 +492,7 @@ private fun DevicePicker(
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 if (form.devices.isEmpty()) {
                     DropdownMenuItem(
-                        text = { Text("Ничего не найдено", fontSize = 12.sp) },
+                        text = { Text("Ничего не найдено — нажмите «Обновить»", fontSize = 12.sp) },
                         onClick = { expanded = false },
                     )
                 }

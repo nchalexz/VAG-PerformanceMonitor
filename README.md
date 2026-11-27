@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Version 0.6.0" src="https://img.shields.io/badge/version-0.6.0-E5484D?style=flat-square"></a>
+  <a href="https://github.com/nchalexz/VAG-PerformanceMonitor/releases"><img alt="Version 0.6.1" src="https://img.shields.io/badge/version-0.6.1-E5484D?style=flat-square"></a>
   <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/license-MIT-38BDF8?style=flat-square"></a>
   <a href="#install"><img alt="Android 7.0+" src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white"></a>
   <a href="build.gradle.kts"><img alt="Kotlin 2.2" src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?style=flat-square&logo=kotlin&logoColor=white"></a>
@@ -32,23 +32,26 @@
 </p>
 
 > [!WARNING]
-> **0.6.0 is a test build, not a verified release.**
-> The new polling core is covered by 98 JVM tests, but 0.6.0 has not been run against a live
-> ELM327, a phone or a car. The last live check (0.5.1) covered the previous scheduling core only.
-> See [What is tested](#what-is-tested-what-is-not).
+> **0.6.1 is a test build, not a verified release.**
+> The polling core is covered by 100 JVM tests and 0.6.0 was run on a real phone against a mock
+> ELM327 over Wi-Fi, but neither build has been run against a live car adapter or a car. See
+> [What is tested](#what-is-tested-what-is-not).
 
 > [!NOTE]
-> 0.6.0 replaces ad-hoc polling with one priority scheduler: P0 (rpm, speed, boost, oil, coolant)
-> first, adaptive intervals from measured latency, exponential backoff for silent parameters, and
-> explicit `VALID`/`STALE`/`NEVER_READ` states. Values no longer vanish on a single timeout, gear
-> shows P/R/N, and a JSON performance journal can be exported from Settings.
+> 0.6.1 keeps the chosen adapter across app restarts and loads the device list only when you ask
+> for it. A live source no longer wastes requests on the virtual gear signal; on the dashboard the
+> gear comes from the DSG block (`22 210F`) when that block answers, otherwise it is `N/A`.
+> 0.6.0 replaced ad-hoc polling with one priority scheduler and explicit
+> `VALID`/`STALE`/`NEVER_READ` states; a JSON performance journal is exported from Settings.
 
 > [!NOTE]
-> **По-русски.** 0.6.0 — тестовая сборка: единый планировщик опроса, состояния
-> `VALID`/`STALE`/`NEVER_READ`, P/R/N у передачи и экспорт журнала производительности.
-> Новое ядро проверено 98 JVM-тестами; на живом ELM327 и на автомобиле 0.6.0 ещё
-> не запускалась. Сборки `standard` и `aa` используют один `applicationId`,
-> поэтому ставьте только одну. Полный перевод — [README.ru.md](README.ru.md).
+> **По-русски.** 0.6.1 запоминает выбранный адаптер и не показывает список
+> устройств без запроса. Живой источник больше не опрашивает виртуальную
+> передачу: на приборке она берётся из DSG (`22 210F`), если блок отвечает,
+> иначе `N/A`. В 0.6.0 появился единый планировщик, состояния
+> `VALID`/`STALE`/`NEVER_READ` и экспорт журнала. Проверено 100 JVM-тестами
+> и запуском 0.6.0 на телефоне с мок-ELM327; на автомобиле — нет.
+> Полный перевод — [README.ru.md](README.ru.md).
 
 ## What this is
 
@@ -121,7 +124,7 @@ More: [docs/AA.md](docs/AA.md) and [docs/AARE_DASHGRID.md](docs/AARE_DASHGRID.md
 ## One telemetry — three surfaces
 
 <p align="center">
-  <img src="docs/assets/surfaces.svg" alt="0.6.0 mockup of three surfaces: dashboard, widget and Android Auto" width="100%">
+  <img src="docs/assets/surfaces.svg" alt="0.6.1 mockup of three surfaces: dashboard, widget and Android Auto" width="100%">
 </p>
 
 <p align="center"><sub>A mockup, not screenshots: the dashboard, widget and car screen read one state.</sub></p>
@@ -164,8 +167,9 @@ owns its own `Elm327`, so the two should not scan at the same time.
 - Day and night themes with separate tokens; Auto follows the system, with a manual override.
 - English and Russian labels. English by default; Russian on a Russian system; manual override.
 - Unsupported, stale or never-read values show “—”, `N/A` and a status dot, never a zero.
-- Gear is a selector position: P, R, N, 1… (the −2 offset comes from the open OBDb set and is not
-  yet confirmed on a car).
+- Gear is a selector position: P, R, N, 1… It is read only from the DSG block (`22 210F`),
+  never from OBD-II; if the block does not answer, the tile stays `N/A`. The −2 offset comes from
+  the open OBDb set and is not yet confirmed on a car.
 - Demo Mode starts on the mockup values (86 °C, 0.62 bar, 95 °C, 96 km/h, 1840 rpm, gear 5, 48 %,
   21 %, 19 %, 162 kPa, 100 kPa, 42.5 g/s, 14.6 V, 58 %) and is always marked **DEMO**.
 
@@ -212,7 +216,7 @@ owns its own `Elm327`, so the two should not scan at the same time.
 
 **Verification**
 
-- 98 JVM tests: decoding, UDS bit fields, catalog integrity, payload parsing, scheduler priority,
+- 100 JVM tests: decoding, UDS bit fields, catalog integrity, payload parsing, scheduler priority,
   fairness, backoff, DID batching, 5/30 s staleness, recovery, zero values, connection loss, slow
   adapter, queue overload, multiple subscribers, metrics and the read-only bridge snapshot.
 - A fake ELM327 transport test covers OBD→UDS header switching, negative UDS answers and the
@@ -241,10 +245,10 @@ Through `adb`:
 
 ```sh
 # standard build
-adb install -r VAG-Performance-Monitor-0.6.0-standard.apk
+adb install -r VAG-Performance-Monitor-0.6.1-standard.apk
 
 # Android Auto build
-adb install -r VAG-Performance-Monitor-0.6.0-AA.apk
+adb install -r VAG-Performance-Monitor-0.6.1-AA.apk
 ```
 
 <details>
@@ -304,10 +308,11 @@ bug.
 |---|---|---|
 | `standard` debug build | `./gradlew :app:assembleStandardDebug` | **yes** |
 | `aa` debug build | `./gradlew :app:assembleAaDebug` | **yes** |
-| 98 JVM tests | `./gradlew :app:testStandardDebugUnitTest` | **yes** |
+| 100 JVM tests | `./gradlew :app:testStandardDebugUnitTest` | **yes** |
 | Scheduler priority, fairness, backoff, DID batching | `TelemetrySchedulerTest`, `Elm327UdsSourceTest` | **yes** |
 | Freshness 5/30 s, N/A, zero, recovery, connection loss, slow adapter, queue overload | `TelemetryEngineScenarioTest` | **yes** |
-| 0.6.0 on a live adapter or a car | hardware | **no** |
+| 0.6.0 on a real phone (Huawei, Android 12) with the mock ELM327 over Wi-Fi | adb + Wi-Fi mock | **yes** |
+| 0.6.1 on a real phone / live car adapter / car | hardware | **no** |
 | Android 15 emulator: Dashboard, Extended, catalog, settings, themes/language, LIVE via ELM327 stub | emulator | **yes** |
 | VAG UDS decode and OBD/UDS header switching | fake ELM327 transport, JVM test | **yes** |
 | Widget placed and configured | Android 15 emulator launcher | **yes** |
@@ -324,7 +329,8 @@ bug.
 Unit tests, emulator runs and renders are **not** compatibility proof. The catalog has 128 signals
 marked “decoded” and one “described”; on a live ELM327 one standard-PID set and a single VAG DID
 (oil temperature) answered, the rest are still unconfirmed. 0.6.0 changed the polling core, so those
-live results do not transfer to it; the scheduler must be measured on the adapter. The exact open points are in
+live results do not transfer to it; the scheduler must be measured on the adapter. The 0.6.0 phone
+run used the mock ELM327 (its values swing by design), not a car. The exact open points are in
 [TEST_PLAN.md](TEST_PLAN.md) and [COMPATIBILITY.md](COMPATIBILITY.md).
 
 ## Build
@@ -436,8 +442,9 @@ is confirmed on a car. See [SIGNAL_CATALOG.md](SIGNAL_CATALOG.md) and
 - Profiles are manual; there is no VIN-based selection.
 - VAG DIDs come from one open Audi-Q3 set. They are decoded, not confirmed on an MQB TDI; some
   blocks will refuse a DID or answer only after `10 03`, which this app does not send.
-- Gear P/R/N comes from the OBDb −2 offset and is not yet confirmed on a car; an unsupported DID
-  may also report the selector differently.
+- Gear is not an OBD-II PID: it comes only from the DSG block (`22 210F`). If the block does not
+  answer, the tile stays `N/A`; P/R/N comes from the OBDb −2 offset and is not yet confirmed on a
+  car.
 - DID batching is enabled per block only after a probe; a block that accepts the probe but returns
   an unusual layout will be detected and fall back to single reads, at the cost of one failed
   request.
@@ -491,6 +498,7 @@ release would need a host allowlist. More: [SECURITY.md](SECURITY.md).
 | [docs/TELEMETRY_OPTIMIZATION.md](docs/TELEMETRY_OPTIMIZATION.md) | The 0.6.0 scheduling spec and its implementation report |
 | [docs/TELEMETRY_OPTIMIZATION_REPORT.md](docs/TELEMETRY_OPTIMIZATION_REPORT.md) | What changed, test results, how to measure on a real adapter |
 | [CHANGELOG.md](CHANGELOG.md) | Change history |
+| [docs/releases/0.6.1.md](docs/releases/0.6.1.md) | 0.6.1 release notes |
 | [docs/releases/0.6.0.md](docs/releases/0.6.0.md) | 0.6.0 release notes |
 | [docs/releases/0.5.1.md](docs/releases/0.5.1.md) | 0.5.1 release notes |
 | [docs/releases/0.4.1.md](docs/releases/0.4.1.md) | 0.4.1 release notes |
