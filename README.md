@@ -234,8 +234,8 @@ The two builds share one `applicationId` and **replace each other** when install
 
 | Build | What is inside | Size |
 |---|---|---|
-| `standard` | Dashboard, widget, diagnostics; no Android Auto. | ≈19.1 MB |
-| `aa` | The same plus Android Auto (Car App Library). | ≈20.5 MB |
+| `standard` | Dashboard, widget, diagnostics; no Android Auto. | ≈18.9 MB |
+| `aa` | The same plus Android Auto (Car App Library). | ≈20.2 MB |
 
 Requirements: Android 7.0+ (API 24), an ELM327 over Wi-Fi, Bluetooth SPP or USB serial, and network,
 Bluetooth, USB-host and notification permissions. Google Mobile Services are not required.
@@ -258,8 +258,9 @@ adb install -r VAG-Performance-Monitor-0.6.2-AA.apk
 <summary>SHA-256 and signing certificate</summary>
 
 ```text
-SHA-256: see SHA256SUMS.txt on the release page
-certificate SHA-256: see the same release page
+a5556b4728da81aefdf1cc9fdbe339aa8a8cb71fccabb4244aef6d12bf21700f  VAG-Performance-Monitor-0.6.2-standard.apk
+1b95364b688e4cb2fd5702bcac0430cada920800f2ea73ec695250a5473451b1  VAG-Performance-Monitor-0.6.2-AA.apk
+certificate SHA-256: 2a143c3b8facd71e3d2340343fa675504b2d547361de71c01f3e560f926e23ea
 ```
 
 The APKs are signed with the Android Debug key (`CN=Android Debug`). Check with

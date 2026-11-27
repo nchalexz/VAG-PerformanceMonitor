@@ -294,8 +294,9 @@ adb install -r VAG-Performance-Monitor-0.6.2-AA.apk
 <summary>Контрольные суммы SHA-256</summary>
 
 ```text
-SHA-256: см. SHA256SUMS.txt на странице релиза
-certificate SHA-256: там же
+a5556b4728da81aefdf1cc9fdbe339aa8a8cb71fccabb4244aef6d12bf21700f  VAG-Performance-Monitor-0.6.2-standard.apk
+1b95364b688e4cb2fd5702bcac0430cada920800f2ea73ec695250a5473451b1  VAG-Performance-Monitor-0.6.2-AA.apk
+certificate SHA-256: 2a143c3b8facd71e3d2340343fa675504b2d547361de71c01f3e560f926e23ea
 ```
 
 </details>
