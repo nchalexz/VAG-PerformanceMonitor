@@ -185,7 +185,7 @@ fun CockpitRoot(model: CockpitViewModel = viewModel()) {
 }
 
 private fun sourceLabel(connection: ConnectionKind, language: UiLanguage): String = when (connection) {
-    ConnectionKind.DEMO -> language.pick("DEMO", "ДЕМО")
+    ConnectionKind.DEMO -> "DEMO"
     ConnectionKind.CONNECTED -> "Live"
     ConnectionKind.CONNECTING -> language.pick("CONNECTING", "ПОДКЛЮЧЕНИЕ")
     ConnectionKind.ERROR -> language.pick("ERROR", "ОШИБКА")

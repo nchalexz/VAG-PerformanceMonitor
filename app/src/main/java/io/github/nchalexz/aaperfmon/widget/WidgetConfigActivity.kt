@@ -221,7 +221,7 @@ private fun WidgetPreview(
         ) {
             Row {
                 Text(title, color = TextColor, fontSize = 12.sp, modifier = Modifier.weight(1f))
-                Text("ДЕМО", color = DimColor, fontSize = 9.sp)
+                Text("DEMO", color = DimColor, fontSize = 9.sp)
             }
             Spacer(Modifier.height(6.dp))
             signals.chunked(2).forEach { row ->

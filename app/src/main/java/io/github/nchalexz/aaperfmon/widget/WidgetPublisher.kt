@@ -167,7 +167,7 @@ object WidgetPublisher {
 
     private fun statusText(state: TelemetryState): String = when (state.connection) {
         ConnectionKind.CONNECTED -> "LIVE"
-        ConnectionKind.DEMO -> "ДЕМО"
+        ConnectionKind.DEMO -> "DEMO"
         ConnectionKind.CONNECTING -> "…"
         ConnectionKind.ERROR -> "ОШИБКА"
         ConnectionKind.DISCONNECTED -> "НЕТ СВЯЗИ"
