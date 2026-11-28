@@ -1,5 +1,7 @@
 package io.github.nchalexz.aaperfmon.telemetry
 
+import io.github.nchalexz.aaperfmon.BuildConfig
+
 import io.github.nchalexz.aaperfmon.core.AdapterBus
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -226,6 +228,9 @@ class TelemetryEngine(
             }
         }
         _values.update { it + updates }
+        if (BuildConfig.DEBUG && source !is DemoSignalSource) {
+            TelemetryTrace.poll(TelemetryTrace.Poll(startedAt, clock(), readings))
+        }
         metrics.onQueueDepth(scheduler.queueDepth(clock()))
     }
 

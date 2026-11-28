@@ -1,5 +1,10 @@
 package io.github.nchalexz.aaperfmon.core
 
+import io.github.nchalexz.aaperfmon.BuildConfig
+import io.github.nchalexz.aaperfmon.telemetry.MonotonicClock
+import io.github.nchalexz.aaperfmon.telemetry.TelemetryTrace
+import java.util.concurrent.atomic.AtomicInteger
+
 /**
  * Elm327 — обмен командами с адаптером и сборка ответов.
  *
@@ -14,6 +19,15 @@ class Elm327(private val transport: Transport) {
 
     /** Команды, которые адаптер не понял. Он отвечает на них знаком вопроса. */
     val unsupported = mutableSetOf<String>()
+
+    private companion object {
+        val nextTraceSession = AtomicInteger()
+    }
+
+    private val traceSession = nextTraceSession.incrementAndGet()
+
+    @Synchronized
+    fun rawLogSnapshot(): List<Pair<String, String>> = rawLog.toList()
 
     private var currentHeader: Int = -1
     private var emptyStreak = 0
@@ -150,18 +164,60 @@ class Elm327(private val transport: Transport) {
      */
     @Synchronized
     fun command(text: String, timeoutMs: Long = 1200): List<String> {
-        drain(30)
-        transport.write((text + "\r").toByteArray(Charsets.US_ASCII))
-
+        val trace = BuildConfig.DEBUG && TelemetryTrace.isTelemetryCommand(text)
+        val startedAt = if (trace) MonotonicClock.now() else 0L
         val builder = StringBuilder()
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            val chunk = transport.read()
-            if (chunk.isNotEmpty()) {
-                builder.append(String(chunk, Charsets.US_ASCII))
-                if (builder.contains('>')) break
-            } else {
-                Thread.sleep(10)
+        var writtenAt: Long? = null
+        var firstBytesAt: Long? = null
+        var firstCanFrameAt: Long? = null
+        var promptAt: Long? = null
+        var lineStart = 0
+        var error: String? = null
+        try {
+            drain(30)
+            val request = (text + "\r").toByteArray(Charsets.US_ASCII)
+            if (trace) writtenAt = MonotonicClock.now()
+            transport.write(request)
+            val deadline = System.currentTimeMillis() + timeoutMs
+            while (System.currentTimeMillis() < deadline) {
+                val chunk = transport.read()
+                if (chunk.isNotEmpty()) {
+                    val at = if (trace) MonotonicClock.now() else 0L
+                    val previousLength = builder.length
+                    builder.append(String(chunk, Charsets.US_ASCII))
+                    val hasPrompt = builder.contains('>')
+                    if (trace) {
+                        if (firstBytesAt == null) firstBytesAt = at
+                        if (hasPrompt) promptAt = at
+                        if (firstCanFrameAt == null) {
+                            for (index in previousLength until builder.length) {
+                                if (builder[index] !in "\r\n>") continue
+                                val line = builder.substring(lineStart, index)
+                                lineStart = index + 1
+                                if (IsoTp.parseLine(line) != null) {
+                                    firstCanFrameAt = at
+                                    break
+                                }
+                            }
+                        }
+                    }
+                    if (hasPrompt) break
+                } else {
+                    Thread.sleep(10)
+                }
+            }
+        } catch (exception: Exception) {
+            error = exception.javaClass.simpleName
+            throw exception
+        } finally {
+            if (trace) {
+                TelemetryTrace.exchange(
+                    TelemetryTrace.Exchange(
+                        traceSession, text, currentHeader, startedAt, writtenAt, firstBytesAt,
+                        firstCanFrameAt, promptAt, MonotonicClock.now(), error,
+                        builder.take(400).toString(),
+                    ),
+                )
             }
         }
 

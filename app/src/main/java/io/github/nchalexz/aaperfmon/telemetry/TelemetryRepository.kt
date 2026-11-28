@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.hardware.usb.UsbManager
 import android.os.SystemClock
+import io.github.nchalexz.aaperfmon.BuildConfig
 import androidx.core.content.ContextCompat
 import io.github.nchalexz.aaperfmon.core.AdapterHolder
 import io.github.nchalexz.aaperfmon.core.BluetoothTransport
@@ -303,7 +304,7 @@ object Telemetry {
             metrics = diagnosticsSnapshot(),
             schedule = scheduleSnapshot(),
             events = diagnosticsEvents(),
-            rawLog = AdapterHolder.elm?.rawLog.orEmpty(),
+            rawLog = if (BuildConfig.DEBUG) emptyList() else AdapterHolder.elm?.rawLogSnapshot().orEmpty(),
         )
     }
 

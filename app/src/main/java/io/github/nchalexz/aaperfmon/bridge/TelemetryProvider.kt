@@ -5,11 +5,13 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
+import io.github.nchalexz.aaperfmon.BuildConfig
 import io.github.nchalexz.aaperfmon.cockpit.CockpitPrefs
 import io.github.nchalexz.aaperfmon.cockpit.UiLanguage
 import io.github.nchalexz.aaperfmon.cockpit.resolveLanguage
 import io.github.nchalexz.aaperfmon.telemetry.MonotonicClock
 import io.github.nchalexz.aaperfmon.telemetry.Telemetry
+import io.github.nchalexz.aaperfmon.telemetry.TelemetryTrace
 
 /**
  * Read-only telemetry bridge for DashGrid.
@@ -40,8 +42,9 @@ class TelemetryProvider : ContentProvider() {
             CockpitPrefs.init(context)
             CockpitPrefs.state.value.resolveLanguage()
         }.getOrDefault(UiLanguage.EN)
+        val state = Telemetry.state.value
         val snapshot = TelemetrySnapshot.build(
-            Telemetry.state.value,
+            state,
             MonotonicClock.now(),
             language,
         )
@@ -52,6 +55,11 @@ class TelemetryProvider : ContentProvider() {
             putString("source", snapshot.source)
             putLong("updatedAt", snapshot.updatedAt)
             putString("signals", TelemetrySnapshot.signalsJson(snapshot))
+            if (BuildConfig.DEBUG) {
+                state.values["engine.map_kpa"]?.takeIf { it.hasEverBeenRead && snapshot.connection != "demo" }?.let {
+                    TelemetryTrace.bridgeRead(TelemetryTrace.BridgeRead(MonotonicClock.now(), it.timestampMs))
+                }
+            }
         }
     }
 

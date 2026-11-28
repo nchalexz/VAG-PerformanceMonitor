@@ -3,6 +3,7 @@ package io.github.nchalexz.aaperfmon.telemetry
 import android.content.Context
 import android.os.Build
 import io.github.nchalexz.aaperfmon.BuildConfig
+import io.github.nchalexz.aaperfmon.core.IsoTp
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -30,26 +31,6 @@ object TelemetryDiagnostics {
     private const val RAW_EXCHANGE_LIMIT = 300
     private const val RAW_RESPONSE_LIMIT = 400
 
-    /** VIN-идентификаторы, которые нельзя выгружать даже как «сырой ответ». */
-    private val PRIVATE_DIDS = setOf("F190", "F187", "F189", "F19E", "F18C")
-
-    /**
-     * Оставляет только запросы телеметрии.
-     *
-     * Команда вида `22 <DID>` относится к телеметрии, но `22F190` — это VIN.
-     * Такие DID исключены, чтобы журнал не содержал идентификатор машины.
-     */
-    private fun isTelemetryCommand(command: String): Boolean {
-        val clean = command.replace(" ", "").uppercase()
-        if (clean.length < 4) return false
-        if (clean.startsWith("01") && clean.length == 4) return true
-        if (clean.startsWith("22") && clean.length >= 6) {
-            val did = clean.substring(2, 6)
-            return did !in PRIVATE_DIDS
-        }
-        return false
-    }
-
     fun export(
         context: Context,
         source: String,
@@ -66,6 +47,13 @@ object TelemetryDiagnostics {
         val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ROOT).format(now)
         val file = File(directory, "telemetry-$stamp.json")
 
+        val exchanges = if (BuildConfig.DEBUG) TelemetryTrace.exchanges() else emptyList()
+        val legacyRaw = if (BuildConfig.DEBUG) {
+            exchanges.takeLast(RAW_EXCHANGE_LIMIT).map { it.command to it.response }
+        } else {
+            rawLog.filter { (command, _) -> TelemetryTrace.isTelemetryCommand(command) }
+                .takeLast(RAW_EXCHANGE_LIMIT)
+        }
         val root = JSONObject().apply {
             put("format", "vpm-telemetry-diagnostics")
             put("formatVersion", 1)
@@ -131,10 +119,7 @@ object TelemetryDiagnostics {
                     // Только запросы телеметрии: OBD mode 01 и UDS 22.
                     // VIN-идентификаторы (F190 и родственные) отфильтрованы,
                     // как и любые команды диагностики.
-                    rawLog
-                        .filter { (command, _) -> isTelemetryCommand(command) }
-                        .takeLast(RAW_EXCHANGE_LIMIT)
-                        .forEach { (command, response) ->
+                    legacyRaw.forEach { (command, response) ->
                             put(
                                 JSONObject().apply {
                                     put("command", command)
@@ -144,6 +129,7 @@ object TelemetryDiagnostics {
                         }
                 },
             )
+            if (BuildConfig.DEBUG) put("timingTrace", timingJson(exchanges))
             put(
                 "notes",
                 JSONArray().apply {
@@ -157,6 +143,58 @@ object TelemetryDiagnostics {
         file.writeText(root.toString(2))
         file
     }.getOrNull()
+
+    private fun timingJson(exchanges: List<TelemetryTrace.Exchange>): JSONObject = JSONObject().apply {
+        put("exchanges", JSONArray().apply {
+            exchanges.forEach { trace ->
+                val rxIds = trace.response.lineSequence()
+                    .mapNotNull { IsoTp.parseLine(it.substringBefore('>'))?.canId }
+                    .distinct().toList()
+                put(JSONObject().apply {
+                    put("adapterSession", trace.adapterSession)
+                    put("command", trace.command)
+                    put("txCanId", trace.txId.takeIf { it >= 0 }?.let(::canId) ?: JSONObject.NULL)
+                    put("rxCanIds", JSONArray(rxIds.map(::canId)))
+                    put("startedAtMs", trace.startedAtMs)
+                    put("writeStartedAtMs", trace.writtenAtMs ?: JSONObject.NULL)
+                    put("firstBytesAtMs", trace.firstBytesAtMs ?: JSONObject.NULL)
+                    put("firstCanFrameAtMs", trace.firstCanFrameAtMs ?: JSONObject.NULL)
+                    put("promptAtMs", trace.promptAtMs ?: JSONObject.NULL)
+                    put("finishedAtMs", trace.finishedAtMs)
+                    put("error", trace.error ?: JSONObject.NULL)
+                    put("response", trace.response)
+                })
+            }
+        })
+        put("polls", JSONArray().apply {
+            TelemetryTrace.polls().forEach { poll ->
+                put(JSONObject().apply {
+                    put("startedAtMs", poll.startedAtMs)
+                    put("enginePublishedAtMs", poll.publishedAtMs)
+                    put("readings", JSONArray().apply {
+                        poll.readings.forEach { (id, reading) ->
+                            put(JSONObject().apply {
+                                put("signalId", id)
+                                put("state", reading.state.name)
+                                put("failure", reading.failure.name)
+                                put("value", reading.value?.takeIf { it.isFinite() } ?: JSONObject.NULL)
+                            })
+                        }
+                    })
+                })
+            }
+        })
+        put("bridgeResponses", JSONArray().apply {
+            TelemetryTrace.bridgeReads().forEach { read ->
+                put(JSONObject().apply {
+                    put("readyAtMs", read.readyAtMs)
+                    put("mapSampleAtMs", read.mapSampleAtMs)
+                })
+            }
+        })
+    }
+
+    private fun canId(value: Int): String = "%03X".format(Locale.ROOT, value)
 
     private fun rotate(directory: File) {
         val files = directory.listFiles()?.sortedBy { it.lastModified() }.orEmpty()

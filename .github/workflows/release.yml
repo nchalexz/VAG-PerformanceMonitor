@@ -1,10 +1,9 @@
-name: Release APKs
+name: Publish VPM diagnostic APKs
 
 on:
   push:
     tags:
-      - 'v*'
-  workflow_dispatch:
+      - 'v0.6.3-diagnostics.1'
 
 permissions:
   contents: write
@@ -37,59 +36,31 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Build standard and AA debug APKs
-        run: |
-          chmod +x ./gradlew
-          ./gradlew :app:assembleStandardDebug :app:assembleAaDebug --no-daemon
+      - name: Build and test diagnostic APKs
+        run: ./gradlew :app:testStandardDebugUnitTest :app:testAaDebugUnitTest :app:assembleStandardDebug :app:assembleAaDebug --no-daemon
 
-      - name: Collect APKs
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          if [ -z "$VERSION" ] || [ "$VERSION" = "main" ]; then VERSION="0.4.1-dev"; fi
-          mkdir -p out
-          cp app/build/outputs/apk/standard/debug/app-standard-debug.apk \
-             "out/VAG-Performance-Monitor-${VERSION}-standard.apk"
-          cp app/build/outputs/apk/aa/debug/app-aa-debug.apk \
-             "out/VAG-Performance-Monitor-${VERSION}-AA.apk"
-          sha256sum out/*.apk > out/SHA256SUMS.txt
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: apks
-          path: out/*
-
-      - name: Publish GitHub release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: out/*
-          generate_release_notes: true
-          body: |
-            ## Сборки
-
-            - `...-standard.apk` — без Android Auto: приборка, виджет, профили
-              автомобилей и подключение ELM327.
-            - `...-AA.apk` — то же плюс `CarAppService` для Android Auto
-              (шаблонный экран Car App Library). Полноэкранная приборка в
-              штатном Android Auto недоступна: там нет произвольного Canvas.
-              Для полноэкранного режима используйте AARE/DashGrid.
-
-            APK собраны как debug и подписаны debug-ключом CI. Установите один
-            из двух: у сборок одинаковый `applicationId`. Если ключ предыдущей
-            установки отличался, сначала удалите старое приложение.
-
-            Подробности: `docs/AA.md`, `docs/WIDGET.md`, `docs/AARE_DASHGRID.md`.
-
-      - name: Hide older releases
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Publish diagnostic assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Only the latest version stays visible; older ones become drafts (not deleted).
-          gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
-            --jq '.[] | select(.draft == false) | .tag_name' |
-          while read -r tag; do
-            [ -z "$tag" ] && continue
-            [ "$tag" = "$GITHUB_REF_NAME" ] && continue
-            gh release edit "$tag" --draft
-          done
+          set -euo pipefail
+          mkdir -p out
+          cp app/build/outputs/apk/standard/debug/app-standard-debug.apk out/VPM-0.6.3-diagnostics-standard.apk
+          cp app/build/outputs/apk/aa/debug/app-aa-debug.apk out/VPM-0.6.3-diagnostics-aa.apk
+          (cd out && sha256sum ./*.apk > VPM-0.6.3-diagnostics-SHA256SUMS.txt)
+          cat > diagnostic-notes.md <<'EOF'
+
+          ## Диагностическая сборка VPM 0.6.3
+
+          Файлы с пометкой `diagnostics` записывают задержки обмена с ELM327 и публикации телеметрии, сохраняя настройки опроса 0.6.3.
+          `diagnostics-standard.apk` — приборка и мост для DashGrid.
+          `diagnostics-aa.apk` дополнительно включает экран штатного Android Auto.
+          Экспорт после поездки доступен в VPM через **Настройки → Диагностика телеметрии → Экспорт журнала**.
+          Диагностические APK подписаны debug-ключом CI. Обновление поверх установленной версии возможно при совпадении подписи.
+          EOF
+          gh release view v0.6.3 --repo "$GITHUB_REPOSITORY" --json body --jq .body > release-notes.md
+          gh release upload v0.6.3 out/* --repo "$GITHUB_REPOSITORY"
+          if ! grep -Fq '## Диагностическая сборка VPM 0.6.3' release-notes.md; then
+            cat diagnostic-notes.md >> release-notes.md
+            gh release edit v0.6.3 --notes-file release-notes.md --repo "$GITHUB_REPOSITORY"
+          fi

@@ -52,6 +52,30 @@ class Elm327UdsSourceTest {
     }
 
     @Test
+    fun `trace records write frame and prompt but excludes private DIDs in any position`() {
+        val elm = Elm327(ScriptedTransport())
+        elm.setHeader(0x7DF)
+        val before = TelemetryTrace.exchanges().size
+        elm.command("010D")
+        elm.command("010B0D")
+        elm.command("221057F190")
+        elm.command("22F1901057")
+
+        val captured = TelemetryTrace.exchanges().drop(before)
+        if (io.github.nchalexz.aaperfmon.BuildConfig.DEBUG) {
+            assertEquals(listOf("010D", "010B0D"), captured.map { it.command })
+            val single = captured.first()
+            assertEquals(0x7DF, single.txId)
+            assertTrue(single.startedAtMs <= single.writtenAtMs!!)
+            assertTrue(single.writtenAtMs <= single.firstCanFrameAtMs!!)
+            assertTrue(single.firstCanFrameAtMs <= single.promptAtMs!!)
+            assertTrue(single.promptAtMs <= single.finishedAtMs)
+        }
+        assertTrue(TelemetryTrace.isTelemetryCommand("010B0D"))
+        assertTrue(!TelemetryTrace.isTelemetryCommand("221057F190"))
+    }
+
+    @Test
     fun `UDS DID is read, decoded and the OBD header is restored`() = runTest {
         val transport = ScriptedTransport()
         val elm = Elm327(transport)

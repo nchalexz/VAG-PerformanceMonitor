@@ -48,6 +48,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,7 +80,10 @@ import io.github.nchalexz.aaperfmon.ui.DarkScheme
 import io.github.nchalexz.aaperfmon.ui.DimColor
 import io.github.nchalexz.aaperfmon.ui.TextColor
 import io.github.nchalexz.aaperfmon.ui.WarnColor
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SettingsActivity : ComponentActivity() {
 
@@ -310,6 +314,8 @@ fun SettingsScreen(onClose: () -> Unit, model: SettingsViewModel = viewModel()) 
 @Composable
 private fun DiagnosticsCard() {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var exporting by remember { mutableStateOf(false) }
     var snapshot by remember { mutableStateOf<TelemetryMetrics.Snapshot?>(null) }
     var message by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
@@ -354,23 +360,34 @@ private fun DiagnosticsCard() {
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(
+                enabled = !exporting,
                 onClick = {
-                    message = runCatching {
-                        val file = Telemetry.exportDiagnostics(context)
-                            ?: error("журнал недоступен")
-                        val uri = FileProvider.getUriForFile(
-                            context,
-                            "${BuildConfig.APPLICATION_ID}.files",
-                            file,
-                        )
-                        val send = Intent(Intent.ACTION_SEND).apply {
-                            type = "application/json"
-                            putExtra(Intent.EXTRA_STREAM, uri)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    exporting = true
+                    scope.launch {
+                        try {
+                            val file = withContext(Dispatchers.IO) { Telemetry.exportDiagnostics(context) }
+                            message = if (file == null) {
+                                "Не удалось экспортировать журнал"
+                            } else {
+                                runCatching {
+                                    val uri = FileProvider.getUriForFile(
+                                        context,
+                                        "${BuildConfig.APPLICATION_ID}.files",
+                                        file,
+                                    )
+                                    val send = Intent(Intent.ACTION_SEND).apply {
+                                        type = "application/json"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(Intent.createChooser(send, "Журнал телеметрии"))
+                                    "Журнал: ${file.name}"
+                                }.getOrElse { "Не удалось открыть журнал для отправки" }
+                            }
+                        } finally {
+                            exporting = false
                         }
-                        context.startActivity(Intent.createChooser(send, "Журнал телеметрии"))
-                        "Журнал: ${file.name}"
-                    }.getOrElse { "Не удалось экспортировать журнал" }
+                    }
                 },
             ) { Text("Экспорт журнала", fontSize = 11.sp) }
         }
